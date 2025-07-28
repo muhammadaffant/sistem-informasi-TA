@@ -31,7 +31,7 @@
                                     <th>Date</th>
                                     <th>Total</th>
                                     <th>Ongkir</th>
-                                    <th>Deskripsi</th>
+                                    <th>Warna</th>
                                     <th>Size</th>
                                     <th>Status Transaksi</th>
                                     <th>Status Pesanan</th>

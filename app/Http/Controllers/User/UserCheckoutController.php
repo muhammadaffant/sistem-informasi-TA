@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
+// Tambahkan 2 baris ini
+use App\Mail\OrderInvoiceMail;
+use Illuminate\Support\Facades\Mail;
+
 class UserCheckoutController extends Controller
 {
     public function index()
@@ -182,9 +186,11 @@ public function checkoutStore(Request $request)
     $id_order = $request->id_order;
     $data = json_decode($request->get('json'));
 
-    DB::transaction(function () use ($id_order, $data) {
+    // Ambil data order utama di luar transaksi agar bisa digunakan nanti
+    $order = Order::findOrFail($id_order);
+
+    DB::transaction(function () use ($order, $data) {
         // 1. Update status order menjadi Success
-        $order = Order::findOrFail($id_order);
         $order->update([
             'status' => 'Success',
             'payment_type' => $data->payment_type,
@@ -196,21 +202,35 @@ public function checkoutStore(Request $request)
 
         // Loop setiap item untuk mengurangi stok varian produk
         foreach ($orderItems as $item) {
-            // Cari varian produk berdasarkan product_id dan size
             $variant = ProductVariant::where('product_id', $item->product_id)
-                                     ->where('size', $item->size)
-                                     ->first();
-
-            // Jika varian produk ditemukan
+                                        ->where('size', $item->size)
+                                        ->first();
             if ($variant) {
-                // Kurangi stok pada kolom 'quantity'
                 $variant->decrement('quantity', $item->qty);
             }
         }
-    });
+    }); // Transaksi database selesai.
+
+    // ==========================================================
+    
+    // ==========================================================
+    try {
+        // Ambil data item order lagi untuk dilampirkan ke email
+        $orderItems = OrderItem::with('product')->where('order_id', $order->id)->get();
+
+        // Kirim email ke alamat email user yang ada di data order
+        Mail::to($order->email)->send(new OrderInvoiceMail($order, $orderItems));
+
+    } catch (\Exception $e) {
+        // (Opsional) Catat error jika email gagal terkirim
+        // Log::error('Gagal mengirim email invoice untuk order #' . $order->id . ': ' . $e->getMessage());
+    }
+    // ==========================================================
+    // SELESAI KODE PENGIRIMAN EMAIL
+    // ==========================================================
 
     $notification = [
-        'message' => 'Pembayaran Success',
+        'message' => 'Pembayaran Berhasil dan Invoice Telah Dikirim!', // Ubah pesan notifikasi
         'alert-type' => 'success',
     ];
 

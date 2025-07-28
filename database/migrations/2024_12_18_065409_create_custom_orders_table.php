@@ -18,12 +18,13 @@ return new class extends Migration
             $table->string('file_design')->default('design.jpg');
             $table->text('design_description')->nullable();
             $table->string('fabric_type', 50)->nullable(); // bahan
-            $table->text('sablon_price')->nullable(); // bahan
+            // $table->text('sablon_price')->nullable();
+            $table->bigInteger('sablon_price')->default(0);
             $table->text('size')->nullable(); //ukuran baju
             $table->bigInteger('total_price')->default(0);
             $table->bigInteger('dp_paid')->default(0);
             $table->bigInteger('remaining_payment')->default(0); // sisa pembayaran
-            $table->string('status')->default('Pending');
+            $table->string('status, 100')->default('Pending');
             $table->dateTime('order_date');
             $table->dateTime('completion_date');
             $table->timestamps();

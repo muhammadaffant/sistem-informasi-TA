@@ -33,10 +33,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at',
         'numberphone'
     ];
-public function reviews()
-{
-    return $this->hasMany(Review::class);
-}
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
     /**
      * The attributes that should be hidden for serialization.
      *

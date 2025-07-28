@@ -160,9 +160,6 @@ public function detail($id, $slug)
     $relatedProduct = Product::where('category_id', $product->category_id)->where('id', '!=', $product->id)->orderBy('id', 'DESC')->get();
     $specialDeals = Product::where('special_deals', 1)->orderBy('id', 'DESC')->limit(3)->get();
 
-    // =======================================================
-    // == LOGIKA UNTUK FITUR REVIEW (BAGIAN YANG DITAMBAHKAN) ==
-    // =======================================================
 
     // 1. Ambil semua ulasan yang statusnya 'approved' untuk produk ini.
     //    Kita juga mengambil data 'user' yang terkait agar bisa menampilkan nama pemberi ulasan.

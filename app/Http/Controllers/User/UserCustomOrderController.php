@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Mail\CustomOrderInvoiceMail;
+use Illuminate\Support\Facades\Mail;
 
 class UserCustomOrderController extends Controller
 {
@@ -206,6 +208,21 @@ public function store(Request $request)
             'payment_type' => $data->payment_type,
             'transaction_id' => $data->transaction_id
         ]);
+
+        // ==========================================================
+        // ==========================================================
+        try {
+            // Kita perlu eager load relasi 'user' karena digunakan di template PDF
+            $customOrderDataForEmail = CustomOrder::with('user')->findOrFail($customId);
+
+            // Kirim email ke alamat email user
+            Mail::to($customOrderDataForEmail->user->email)->send(new CustomOrderInvoiceMail($customOrderDataForEmail));
+
+        } catch (\Exception $e) {
+            // (Opsional) Catat error jika email gagal terkirim
+            // \Log::error('Gagal mengirim email invoice custom order #' . $customId . ': ' . $e->getMessage());
+        }
+        //
 
         $notification = [
             'message' => 'Pembayaran Success',

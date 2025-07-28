@@ -164,7 +164,7 @@
                                     </div>
                                 </div>
                                 <div class="card-footer text-center">
-                                    <button type="button" id="submitCustomOrder" class="btn btn-primary btn-lg btn-block">Submit Custom Order</button>
+                                    <button type="button" id="reviewOrderButton" class="btn btn-primary btn-lg btn-block">Lanjutkan ke Review Pesanan</button>
                                 </div>
                             </div>
                         </div>
@@ -174,6 +174,71 @@
         </div>
     </div>
 @endsection
+
+{{-- Letakkan kode ini di dalam file custom_order.blade.php, bisa di bawah <form> atau sebelum @endsection --}}
+
+<div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">Konfirmasi Pesanan Anda</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Harap periksa kembali detail pesanan Anda sebelum melanjutkan. Pastikan semua data sudah benar.</p>
+                
+                {{-- Area untuk menampilkan ringkasan --}}
+                <div class="row">
+                    {{-- Kolom Kiri: Detail Pesanan & Pengiriman --}}
+                    <div class="col-md-6">
+                        <h6><strong><i class="fas fa-user-edit"></i> Detail Pemesan & Desain</strong></h6>
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td width="120px">Nama</td>
+                                <td>: <strong id="review_name"></strong></td>
+                            </tr>
+                            <tr>
+                                <td>Letak Desain</td>
+                                <td>: <strong id="review_position"></strong></td>
+                            </tr>
+                             <tr>
+                                <td>Warna Kaos</td>
+                                <td>: <strong id="review_colors"></strong></td>
+                            </tr>
+                            <tr>
+                                <td valign="top">Preview Desain</td>
+                                <td valign="top">: <img id="review_design_preview" src="" alt="Preview Desain" style="max-width: 150px; border: 1px solid #ddd; padding: 5px;"></td>
+                            </tr>
+                        </table>
+
+                        <h6 class="mt-4"><strong><i class="fas fa-shipping-fast"></i> Alamat Pengiriman</strong></h6>
+                        <p id="review_address" style="white-space: pre-wrap;"></p>
+                    </div>
+
+                    {{-- Kolom Kanan: Ringkasan Belanja --}}
+                    <div class="col-md-6">
+                         <h6><strong><i class="fas fa-tshirt"></i> Rincian Produk</strong></h6>
+                         <div id="review_items_summary" class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                            {{-- Rincian item akan dimasukkan di sini oleh JavaScript --}}
+                         </div>
+                         
+                         <h6 class="mt-4"><strong><i class="fas fa-calculator"></i> Ringkasan Biaya</strong></h6>
+                         <div id="review_price_summary">
+                            {{-- Ringkasan harga dari kolom kanan akan disalin ke sini --}}
+                         </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal & Kembali Edit</button>
+                <button type="button" id="confirmAndSubmitOrder" class="btn btn-primary"><i class="fas fa-check"></i> Ya, Konfirmasi & Proses Pesanan</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @push('script')
 <script>
@@ -423,50 +488,136 @@ $(function() {
     // =================================================================
     // FUNGSI SUBMIT FORM UTAMA
     // =================================================================
-    $('#submitCustomOrder').on('click', function(e) {
+  $('#reviewOrderButton').on('click', function(e) {
         e.preventDefault();
-        
-        let formData = new FormData($('#customOrderForm')[0]);
-        // Validasi Manual Sederhana sebelum submit
+
+        // --- Validasi Manual Sederhana sebelum membuka modal ---
         let totalQty = 0;
         $('#size-list-container input[type="number"]').each(function() {
             totalQty += parseInt($(this).val()) || 0;
         });
 
+        if ($('select[name="bahan_id"]').val() === null) {
+            Swal.fire({ icon: 'error', title: 'Oops...', text: 'Silakan pilih tipe bahan terlebih dahulu.' });
+            return;
+        }
         if (totalQty < 12) {
-             Swal.fire({ icon: 'error', title: 'Gagal!', text: 'Minimum total kuantitas pemesanan adalah 12 pcs.' });
-             return;
+            Swal.fire({ icon: 'error', title: 'Gagal!', text: 'Minimum total kuantitas pemesanan adalah 12 pcs.' });
+            return;
+        }
+        if ($('select[name="jenis_sablon_id"]').val() === null) {
+            Swal.fire({ icon: 'error', title: 'Oops...', text: 'Silakan pilih tipe sablon terlebih dahulu.' });
+            return;
         }
         if (!$('#file_design').val()) {
-             Swal.fire({ icon: 'error', title: 'Gagal!', text: 'Harap upload file desain Anda.' });
+            Swal.fire({ icon: 'error', title: 'Gagal!', text: 'Harap upload file desain Anda.' });
+            return;
+        }
+        if ($('#ongkir_hidden').val() === '') {
+             Swal.fire({ icon: 'error', title: 'Oops...', text: 'Harap lengkapi alamat dan pilih paket pengiriman.' });
              return;
         }
+        // Jika ada validasi lain, tambahkan di sini
+
+        // --- Jika lolos validasi, kumpulkan data untuk ditampilkan di modal ---
+
+        // 1. Data Pemesan
+        $('#review_name').text($('#name').val());
+        $('#review_position').text($('select[name="position"] option:selected').text());
+        $('#review_colors').text($('#design_description').val() || '-');
+
+        // 2. Preview Gambar Desain
+        const fileInput = $('#file_design')[0];
+        if (fileInput.files && fileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#review_design_preview').attr('src', e.target.result);
+            }
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+        
+        // 3. Rincian Item/Ukuran yang Dipesan
+        let itemsHtml = `<table class="table table-sm table-striped"><thead><tr><th>Ukuran</th><th>Qty</th></tr></thead><tbody>`;
+        let hasItems = false;
+        $('#size-list-container input[type="number"]').each(function() {
+            let qty = parseInt($(this).val()) || 0;
+            if (qty > 0) {
+                hasItems = true;
+                let sizeName = $(this).closest('tr').find('td:first-child strong').text();
+                itemsHtml += `<tr><td>${sizeName}</td><td>${qty} pcs</td></tr>`;
+            }
+        });
+        itemsHtml += `</tbody></table>`;
+        $('#review_items_summary').html(hasItems ? itemsHtml : '<p>Tidak ada item.</p>');
+
+
+        // 4. Alamat Pengiriman
+        let province = $('#province_select').select2('data')[0]?.text || '';
+        let city = $('#city_select').select2('data')[0]?.text || '';
+        let district = $('#district_select').select2('data')[0]?.text || '';
+        let address = $('#address').val();
+        let fullAddress = `${address}\n${district}, ${city}, ${province}`;
+        $('#review_address').text(fullAddress);
+
+        // 5. Salin Ringkasan Harga
+        $('#review_price_summary').html($('#price-summary-container').html());
+        // Menghapus peringatan jika ada di dalam modal
+        $('#review_price_summary .alert').remove();
+
+        // --- Tampilkan Modal ---
+        $('#confirmationModal').modal('show');
+    });
+
+
+    // =================================================================
+    // LANGKAH 2: KLIK TOMBOL KONFIRMASI DI DALAM MODAL UNTUK SUBMIT
+    // =================================================================
+    $('#confirmAndSubmitOrder').on('click', function() {
+        // Ambil form data. Karena kita tidak pindah halaman, file tetap ada.
+        let formData = new FormData($('#customOrderForm')[0]);
+        const submitButton = $(this); // Simpan referensi tombol
 
         $.ajax({
             url: "{{ route('user.customorder.store') }}",
-            type: "POST", 
-            data: formData, 
-            processData: false, 
+            type: "POST",
+            data: formData,
+            processData: false,
             contentType: false,
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-            beforeSend: () => $('#submitCustomOrder').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Submitting...'),
+            beforeSend: function() {
+                // Nonaktifkan kedua tombol untuk mencegah klik ganda
+                submitButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Memproses...');
+                $('#reviewOrderButton').prop('disabled', true);
+            },
             success: function(response) {
+                $('#confirmationModal').modal('hide'); // Sembunyikan modal
                 if (response.success) {
-                    Swal.fire({ icon: 'success', title: 'Berhasil!', text: response.success, timer: 3000, showConfirmButton: false });
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: response.success,
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
                     setTimeout(() => {
                         window.location.href = "{{ route('user.customorder.history') }}";
                     }, 3000);
                 }
             },
             error: function(xhr) {
+                $('#confirmationModal').modal('hide');
                 let errorMsg = 'Terjadi kesalahan. Pastikan semua field telah terisi dengan benar.';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    // Menampilkan error validasi dari Laravel
-                     errorMsg = Object.values(xhr.responseJSON.errors).map(e => e.join('\n')).join('\n');
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    errorMsg = Object.values(xhr.responseJSON.errors).map(e => `<li>${e.join(', ')}</li>`).join('');
+                    errorMsg = `<ul class="text-left" style="padding-left: 20px;">${errorMsg}</ul>`;
                 }
-                Swal.fire({ icon: 'error', title: 'Gagal!', html: `<pre>${errorMsg}</pre>` });
+                Swal.fire({ icon: 'error', title: 'Gagal!', html: errorMsg });
             },
-            complete: () => $('#submitCustomOrder').prop('disabled', false).text('Submit Custom Order')
+            complete: function() {
+                // Aktifkan kembali tombol setelah selesai
+                submitButton.prop('disabled', false).html('<i class="fas fa-check"></i> Ya, Konfirmasi & Proses Pesanan');
+                $('#reviewOrderButton').prop('disabled', false);
+            }
         });
     });
 });

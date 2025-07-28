@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             // Relasi ke tabel kategori
             $table->foreignId('sablon_category_id')->constrained('sablon_categories')->onDelete('cascade');
-            $table->string('nama_sablon'); // e.g., 'Logo Kecil', 'Full Depan'
+            $table->string('nama_sablon', 100); // e.g., 'Logo Kecil', 'Full Depan'
             $table->integer('harga');
             $table->timestamps();
         });
