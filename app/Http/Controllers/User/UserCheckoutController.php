@@ -113,72 +113,78 @@ class UserCheckoutController extends Controller
     }
 
 
-    public function detail(Request $request)
-    {
-        // Validasi data yang masuk
-        $validated = $request->validate([
-            'name' => 'required|string|max:255', 'email' => 'required|email',
-            'phone' => 'required|string', 'post_code' => 'required|string',
-            'province_id' => 'required|integer', 'city_id' => 'required|integer',
-            'district_id' => 'required|integer',
-            'address' => 'required|string', 'notes' => 'nullable|string',
-            'shipping_cost' => 'required|numeric', 'courier_hidden' => 'required|string',
-            'courier_service_hidden' => 'required|string',
+public function detail(Request $request)
+{
+    // 1. HAPUS 'district_id' DARI ATURAN VALIDASI
+    $validated = $request->validate([
+        'name' => 'required|string|max:255', 'email' => 'required|email',
+        'phone' => 'required|string', 'post_code' => 'required|string',
+        'province_id' => 'required|integer', 'city_id' => 'required|integer',
+        'district_id' => 'required|integer', // <-- Baris ini dihapus
+        'address' => 'required|string', 'notes' => 'nullable|string',
+        'shipping_cost' => 'required|numeric', 'courier_hidden' => 'required|string',
+        'courier_service_hidden' => 'required|string',
+    ]);
+
+    $carts = Cart::content();
+    $total = Cart::total();
+    $totalAmount = (int) str_replace(',', '', Cart::subtotal()) + $validated['shipping_cost'];
+    
+    // Proses mapping ID hanya untuk province dan regency
+    $apiProvinceId = $validated['province_id'];
+    $apiCityId = $validated['city_id'];
+    // $apiDistrictId = $validated['district_id'];
+
+    $localProvince = \App\Models\Province::where('rajaongkir_id', $apiProvinceId)->first();
+    $localRegency = \App\Models\Regency::where('rajaongkir_id', $apiCityId)->first();
+    // $localDistrict = \App\Models\District::where('rajaongkir_id', $apiDistrictId)->first();
+    // Tidak ada lagi mapping untuk district
+
+    $orderId = Order::insertGetId([
+        'user_id' => Auth::id(), 
+        'province_id' => $localProvince ? $localProvince->id : null,
+        'regency_id' => $localRegency ? $localRegency->id : null, 
+        // 'district_id' => $localDistrict ? $localDistrict->id : null,
+        'district_id' => $validated['district_id'],
+        // 'district_id' => null, // <-- 2. SET district_id MENJADI NULL SECARA LANGSUNG
+        'name' => $validated['name'],
+        'email' => $validated['email'], 'phone' => $validated['phone'],
+        'address' => $validated['address'], 'post_code' => $validated['post_code'],
+        'notes' => $validated['notes'], 'amount' => $totalAmount,
+        'ongkir' => $validated['shipping_cost'],
+        'courir' => $validated['courier_hidden'] . ' - ' . $validated['courier_service_hidden'],
+        'invoice_no' => 'INV' . mt_rand(10000000, 99999999),
+        'status' => 'Pending', 'created_at' => Carbon::now(),
+    ]);
+    
+    foreach ($carts as $cart) {
+        OrderItem::insert([
+            'order_id' => $orderId, 'product_id' => $cart->id,
+            'color' => $cart->options->color, 'size' => $cart->options->size,
+            'qty' => $cart->qty, 'price' => $cart->price, 'created_at' => Carbon::now(),
         ]);
+    }
 
-        $carts = Cart::content();
-        $total = Cart::total();
-        $totalAmount = (int) str_replace(',', '', Cart::subtotal()) + $validated['shipping_cost'];
-        
-        $orderId = Order::insertGetId([
-            'user_id' => Auth::id(), 'province_id' => $validated['province_id'],
-            'regency_id' => $validated['city_id'], 'name' => $validated['name'],
-            'district_id' => $validated['district_id'],
-            'email' => $validated['email'], 'phone' => $validated['phone'],
-            'address' => $validated['address'], 'post_code' => $validated['post_code'],
-            'notes' => $validated['notes'], 'amount' => $totalAmount,
-            'ongkir' => $validated['shipping_cost'],
-            'courir' => $validated['courier_hidden'] . ' - ' . $validated['courier_service_hidden'],
-            'invoice_no' => 'INV' . mt_rand(10000000, 99999999),
-            // 'order_date' => Carbon::now()->format('d F Y'),
-            // 'order_month' => Carbon::now()->format('F'), 'order_year' => Carbon::now()->format('Y'),
-            'status' => 'Pending', 'created_at' => Carbon::now(),
-        ]);
-        
-        foreach ($carts as $cart) {
-            OrderItem::insert([
-                'order_id' => $orderId, 'product_id' => $cart->id,
-                'color' => $cart->options->color, 'size' => $cart->options->size,
-                'qty' => $cart->qty, 'price' => $cart->price, 'created_at' => Carbon::now(),
-            ]);
-        }
+    \Midtrans\Config::$serverKey = config('midtrans.server_key');
+    \Midtrans\Config::$isProduction = config('midtrans.is_production', false);
+    \Midtrans\Config::$isSanitized = true; \Midtrans\Config::$is3ds = true;
 
-        // Midtrans Logic
-        \Midtrans\Config::$serverKey = config('midtrans.server_key');
-        \Midtrans\Config::$isProduction = config('midtrans.is_production', false);
-        \Midtrans\Config::$isSanitized = true; \Midtrans\Config::$is3ds = true;
+    $params = [
+        'transaction_details' => ['order_id' => $orderId . '-' . time(), 'gross_amount' => $totalAmount],
+        'customer_details' => ['first_name' => $validated['name'], 'email' => $validated['email'], 'phone' => $validated['phone']],
+    ];
 
-        $params = [
-            'transaction_details' => ['order_id' => $orderId . '-' . time(), 'gross_amount' => $totalAmount],
-            'customer_details' => ['first_name' => $validated['name'], 'email' => $validated['email'], 'phone' => $validated['phone']],
-        ];
-
-        $snapToken = \Midtrans\Snap::getSnapToken($params);
-        Cart::destroy();
+    $snapToken = \Midtrans\Snap::getSnapToken($params);
+    Cart::destroy();
 
     return view('frontend.checkout.detail', [
-        'title' => 'Checkout Detail',
-        'snapToken' => $snapToken,
-        'orderId' => $orderId,
-        'carts' => $carts, // Kirim data cart
-        'total' => $total,
-        'ongkir' => $validated['shipping_cost'],
-        'name' => $validated['name'],
-        'phone' => $validated['phone'],
-        'address' => $validated['address'],
-        'notes' => $validated['notes'],
+        'title' => 'Checkout Detail', 'snapToken' => $snapToken,
+        'orderId' => $orderId, 'carts' => $carts,
+        'total' => $total, 'ongkir' => $validated['shipping_cost'],
+        'name' => $validated['name'], 'phone' => $validated['phone'],
+        'address' => $validated['address'], 'notes' => $validated['notes'],
     ]);
-    }
+}
 
 
 public function checkoutStore(Request $request)

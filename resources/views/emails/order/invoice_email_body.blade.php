@@ -32,7 +32,7 @@
                             <td style="font-family: sans-serif; font-size: 14px; vertical-align: top; box-sizing: border-box; padding: 30px;">
                                 <h1 style="font-size: 24px; font-weight: 600; color: #333333; margin: 0 0 20px 0;">Pembayaran Berhasil! ✅</h1>
                                 <p style="margin: 0 0 15px 0;">Halo <strong>{{ $order->name }}</strong>,</p>
-                                <p style="margin: 0 0 15px 0;">Terima kasih telah berbelanja di Viary Store. Kami telah menerima pembayaran untuk pesanan Anda. Invoice lengkap dalam format PDF juga telah kami lampirkan bersama email ini.</p>
+                                <p style="margin: 0 0 15px 0;">Terima kasih telah berbelanja di Viary Store. Kami telah menerima pembayaran untuk pesanan Anda.</p>
                                 
                                 <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%; margin-top: 30px; border-top: 1px solid #eeeeee;">
                                     <tr><td style="padding-top: 20px;"></td></tr>

@@ -17,6 +17,7 @@
         <div class="container">
             <a href="{{ route('user.customorder.history') }}" class="btn btn-sm btn-warning mb-3">Kembali</a>
             <div class="row">
+                {{-- KOLOM KIRI: DETAIL PESANAN --}}
                 <div class="col-md-8">
                     <div class="card" style="border: 1px solid #e0e0e0; padding: 20px;">
                         <h4 class="card-title">Detail Pesanan Custom</h4>
@@ -29,9 +30,6 @@
                         <h5>Rincian Item:</h5>
                         @php
                             $sizeDetails = json_decode($customOrder->size, true);
-                            // Inisialisasi variabel untuk kalkulasi
-                            $totalBahanBeforeDiscount = 0;
-                            $totalDiscountAmount = 0;
                         @endphp
 
                         @if(is_array($sizeDetails) && json_last_error() === JSON_ERROR_NONE)
@@ -43,35 +41,18 @@
                                             <th>Jumlah</th>
                                             <th>Harga Bahan (Satuan)</th>
                                             <th>Harga Sablon (Satuan)</th>
-                                            <th>Subtotal</th>
+                                            <th>Subtotal per Item</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($sizeDetails as $item)
-                                            @php
-                                                // Kalkulasi untuk setiap item
-                                                $hargaBahanAsli = $item['price'] ?? 0;
-                                                $quantity = $item['quantity'] ?? 0;
-                                                $discountPercent = $item['discount_percent'] ?? 0;
-                                                
-                                                $subtotalBahan = $hargaBahanAsli * $quantity;
-                                                $discountForItem = $subtotalBahan * ($discountPercent / 100);
-
-                                                // Akumulasi untuk ringkasan total
-                                                $totalBahanBeforeDiscount += $subtotalBahan;
-                                                $totalDiscountAmount += $discountForItem;
-                                            @endphp
                                             <tr>
                                                 <td>{{ $item['size'] ?? 'N/A' }}</td>
-                                                <td>{{ $quantity }} pcs</td>
-                                                <td>
-                                                    {{ 'Rp ' . number_format($hargaBahanAsli, 0, ',', '.') }}
-                                                    {{-- Tampilkan info diskon jika ada --}}
-                                                    @if($discountPercent > 0)
-                                                        <br><span style="color: #dc3545; font-size: 0.9em;">(Diskon {{ $discountPercent }}%)</span>
-                                                    @endif
-                                                </td>
+                                                <td>{{ $item['quantity'] ?? 0 }} pcs</td>
+                                                {{-- Tampilan harga bahan tanpa info diskon --}}
+                                                <td>{{ 'Rp ' . number_format($item['price'] ?? 0, 0, ',', '.') }}</td>
                                                 <td>{{ 'Rp ' . number_format($item['sablon_price'] ?? 0, 0, ',', '.') }}</td>
+                                                {{-- Subtotal per item yang sudah dihitung sebelumnya --}}
                                                 <td>{{ 'Rp ' . number_format($item['subtotal'] ?? 0, 0, ',', '.') }}</td>
                                             </tr>
                                         @endforeach
@@ -84,25 +65,16 @@
                     </div>
                 </div>
 
+                {{-- KOLOM KANAN: RINGKASAN BIAYA --}}
                 <div class="col-md-4">
                     <div class="card" style="border: 1px solid #e0e0e0; padding: 20px;">
                         <h4 class="card-title">Ringkasan Biaya</h4>
                         <hr>
+                        {{-- Tampilan ringkasan biaya disederhanakan --}}
                         <table class="table">
                             <tbody>
-                                {{-- UPDATE: Ringkasan biaya yang lebih detail --}}
                                 <tr>
-                                    <th>Total Harga Produk</th>
-                                    <td class="text-right">{{ 'Rp ' . number_format($totalBahanBeforeDiscount + ($customOrder->sablon_price * $customOrder->qty), 0, ',', '.') }}</td>
-                                </tr>
-                                @if ($totalDiscountAmount > 0)
-                                <tr>
-                                    <th>Total Diskon Bahan</th>
-                                    <td class="text-right" style="color: #dc3545;">- {{ 'Rp ' . number_format($totalDiscountAmount, 0, ',', '.') }}</td>
-                                </tr>
-                                @endif
-                                <tr>
-                                    <th>Subtotal (setelah diskon)</th>
+                                    <th>Subtotal Produk</th>
                                     <td class="text-right">{{ 'Rp ' . number_format($customOrder->total_price, 0, ',', '.') }}</td>
                                 </tr>
                                 <tr>
@@ -118,7 +90,7 @@
                         <hr>
                         
                         @php
-                            // Tentukan warna berdasarkan status
+                            // Logika untuk warna status badge
                             $status_color = '#6c757d'; // Abu-abu (default)
                             $text_color = 'white';
                             if ($customOrder->status == 'Success') {
@@ -153,6 +125,7 @@
 
     <div style="margin-top: 50px"></div>
 
+    {{-- Form untuk pembayaran tidak perlu diubah --}}
     <form action="{{ route('user.customorder.payment') }}" method="post" id="submitForm">
         @csrf
         <input type="hidden" name="json" id="js_callback">

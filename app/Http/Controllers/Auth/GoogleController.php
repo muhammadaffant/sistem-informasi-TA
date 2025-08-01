@@ -8,21 +8,17 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
-use Carbon\Carbon; // Tambahkan ini untuk menggunakan Carbon
+use Carbon\Carbon;
 
 class GoogleController extends Controller
 {
-    /**
-     * Mengarahkan pengguna ke halaman autentikasi Google.
-     */
+
     public function redirect()
     {
         return Socialite::driver('google')->redirect();
     }
 
-    /**
-     * Mendapatkan informasi pengguna dari Google dan melakukan login/register.
-     */
+
     public function callback()
     {
         try {
@@ -48,19 +44,17 @@ class GoogleController extends Controller
                 Auth::login($user);
             } else {
                 // Jika pengguna belum ada, buat pengguna baru
-                // Username & numberphone tidak disediakan Google, jadi kita bisa isi default atau null
+                // Username & numberphone tidak disediakan Google, jadi bisa isi default atau null
                 $newUser = User::create([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
-                    'username' => strstr($googleUser->email, '@', true) . Str::random(3), // Contoh username
+                    'username' => strstr($googleUser->email, '@', true) . Str::random(3),
                     'google_id' => $googleUser->id,
-                    'password' => Hash::make(Str::random(24)), // Buat password acak
-                    'email_verified_at' => Carbon::now(), // <<< Tambahkan baris ini
-                    // 'numberphone' bisa dibiarkan null jika schema mengizinkan
+                    'password' => Hash::make(Str::random(24)),
+                    'email_verified_at' => Carbon::now(),
+                    // 'numberphone'
                 ]);
 
-                // Assign role 'user' seperti pada action Fortify Anda
-                // Pastikan Anda sudah menginstal dan mengkonfigurasi spatie/laravel-permission jika menggunakan ini
                 if (method_exists($newUser, 'assignRole')) {
                     $newUser->assignRole('user');
                 }
@@ -68,7 +62,7 @@ class GoogleController extends Controller
                 Auth::login($newUser);
             }
 
-            return redirect('/dashboard'); // Arahkan ke dashboard setelah berhasil login
+            return redirect('/dashboard');
 
         } catch (\Exception $e) {
             // Tangani error, misalnya kembali ke halaman login dengan pesan error

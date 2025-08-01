@@ -248,66 +248,56 @@ $(function() {
     }
 
     // FUNGSI UNTUK MENGHITUNG DAN MENAMPILKAN RINGKASAN HARGA SECARA REAL-TIME
-    function updatePriceSummary() {
-        let totalQty = 0;
-        let totalBahanPrice = 0;
-        const container = $('#price-summary-container');
-        const sablonPrice = parseFloat($('#jenis_sablon').find('option:selected').data('price')) || 0;
-        const ongkir = parseFloat($('#ongkir_hidden').val()) || 0; // Ambil ongkir
+function updatePriceSummary() {
+    let totalQty = 0;
+    let totalBahanPrice = 0;
+    const container = $('#price-summary-container');
+    const sablonPrice = parseFloat($('#jenis_sablon').find('option:selected').data('price')) || 0;
+    const ongkir = parseFloat($('#ongkir_hidden').val()) || 0;
 
-        $('#size-list-container input[type="number"]').each(function() {
-            let qty = parseInt($(this).val()) || 0;
-            if (qty > 0) {
-                totalQty += qty;
-                totalBahanPrice += parseFloat($(this).data('price')) * qty;
-            }
-        });
-
-        if (totalQty === 0) {
-            container.html('<p class="text-muted text-center" style="padding: 50px 0;">Ringkasan akan muncul di sini setelah Anda mengisi kuantitas.</p>');
-            return;
+    $('#size-list-container input[type="number"]').each(function() {
+        let qty = parseInt($(this).val()) || 0;
+        if (qty > 0) {
+            totalQty += qty;
+            totalBahanPrice += parseFloat($(this).data('price')) * qty;
         }
+    });
 
-        let discountRate = 0;
-        let discountText = "Tidak ada diskon";
-        if (totalQty >= 100) {
-            discountRate = 0.15; discountText = `Diskon ${discountRate * 100}%`;
-        } else if (totalQty >= 24) {
-            discountRate = 0.10; discountText = `Diskon ${discountRate * 100}%`;
-        } else if (totalQty >= 12) {
-            discountRate = 0.05; discountText = `Diskon ${discountRate * 100}%`;
-        }
-
-        const discountAmount = totalBahanPrice * discountRate;
-        const finalBahanPrice = totalBahanPrice - discountAmount;
-        const totalSablonPrice = sablonPrice * totalQty;
-        const subtotalProduk = finalBahanPrice + totalSablonPrice;
-        const grandTotal = subtotalProduk + ongkir; // Kalkulasi Grand Total
-
-        let summaryHtml = `
-            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
-                <table class="table table-sm" style="margin-bottom: 0;">
-                    <tbody>
-                        <tr><td>Total Kuantitas</td><td class="text-right"><b>${totalQty} pcs</b></td></tr>
-                        <tr><td>Harga Bahan</td><td class="text-right">${formatRupiah(totalBahanPrice)}</td></tr>
-                        <tr><td>Diskon Bahan (${discountText})</td><td class="text-right text-danger">- ${formatRupiah(discountAmount)}</td></tr>
-                        <tr><td>Harga Sablon (${formatRupiah(sablonPrice)}/pcs)</td><td class="text-right">${formatRupiah(totalSablonPrice)}</td></tr>
-                        <tr style="border-top: 1px solid #ddd;"><td class="font-weight-bold">Subtotal Produk</td><td class="text-right font-weight-bold">${formatRupiah(subtotalProduk)}</td></tr>
-                        <tr><td>Biaya Pengiriman</td><td class="text-right">${formatRupiah(ongkir)}</td></tr>
-                    </tbody>
-                    <tfoot>
-                        <tr class="grand-total-row bg-light"><td class="text-primary">Grand Total</td><td class="text-right text-primary">${formatRupiah(grandTotal)}</td></tr>
-                    </tfoot>
-                </table>
-        `;
-        
-        if (totalQty > 0 && totalQty < 12) {
-            summaryHtml += `<div class="alert alert-warning text-center mt-3 p-2"><b>Peringatan:</b> Min. pemesanan adalah 12 pcs.</div>`;
-        }
-
-        summaryHtml += `</div>`;
-        container.html(summaryHtml);
+    if (totalQty === 0) {
+        container.html('<p class="text-muted text-center" style="padding: 50px 0;">Ringkasan akan muncul di sini setelah Anda mengisi kuantitas.</p>');
+        return;
     }
+
+    // BLOK LOGIKA DISKON DIHAPUS
+
+    const totalSablonPrice = sablonPrice * totalQty;
+    const subtotalProduk = totalBahanPrice + totalSablonPrice; // Kalkulasi disederhanakan
+    const grandTotal = subtotalProduk + ongkir;
+
+    let summaryHtml = `
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
+            <table class="table table-sm" style="margin-bottom: 0;">
+                <tbody>
+                    <tr><td>Total Kuantitas</td><td class="text-right"><b>${totalQty} pcs</b></td></tr>
+                    <tr><td>Total Harga Bahan</td><td class="text-right">${formatRupiah(totalBahanPrice)}</td></tr>
+                    {{-- Baris diskon dihapus --}}
+                    <tr><td>Total Harga Sablon (${formatRupiah(sablonPrice)}/pcs)</td><td class="text-right">${formatRupiah(totalSablonPrice)}</td></tr>
+                    <tr style="border-top: 1px solid #ddd;"><td class="font-weight-bold">Subtotal Produk</td><td class="text-right font-weight-bold">${formatRupiah(subtotalProduk)}</td></tr>
+                    <tr><td>Biaya Pengiriman</td><td class="text-right">${formatRupiah(ongkir)}</td></tr>
+                </tbody>
+                <tfoot>
+                    <tr class="grand-total-row bg-light"><td class="text-primary">Grand Total</td><td class="text-right text-primary">${formatRupiah(grandTotal)}</td></tr>
+                </tfoot>
+            </table>
+    `;
+    
+    if (totalQty > 0 && totalQty < 12) {
+        summaryHtml += `<div class="alert alert-warning text-center mt-3 p-2"><b>Peringatan:</b> Min. pemesanan adalah 12 pcs.</div>`;
+    }
+
+    summaryHtml += `</div>`;
+    container.html(summaryHtml);
+}
     
     // Panggil fungsi update saat kuantitas atau jenis sablon berubah
     $('#size-list-container').on('input', 'input[type="number"]', updatePriceSummary);

@@ -78,10 +78,15 @@
                                     <h1 class="name" id="pname">{{ $product->product_name }}</h1>
                                     
                                     {{-- Tampilan Stok --}}
+                                    {{-- Tampilan Stok --}}
                                     <div class="stock-container info-container m-t-10">
                                         <div class="row">
-                                            <div class="col-sm-3"><div class="stock-box"><span class="label">Ketersediaan :</span></div></div>
-                                            <div class="col-sm-9"><div class="stock-box"><span id="stock-status" class="value">Pilih ukuran</span></div></div>
+                                            <div class="col-sm-12">
+                                                <div class="stock-box">
+                                                    <span class="label">Ketersediaan :</span>
+                                                    <span id="stock-status" class="value" style="margin-left: 8px;">Pilih ukuran</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 

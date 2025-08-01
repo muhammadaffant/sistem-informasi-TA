@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('custom_orders', function (Blueprint $table) {
-            $table->text('payment_type')->nullable();
-            $table->string('transaction_id', 60)->nullable();
+        Schema::table('provinces', function (Blueprint $table) {
+            $table->integer('rajaongkir_id')->nullable()->after('name')->index();
         });
     }
 
@@ -22,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('custom_orders', function (Blueprint $table) {
-            $table->dropColumn(['payment_type', 'transaction_id']);
+        Schema::table('provinces', function (Blueprint $table) {
+            //
         });
     }
 };

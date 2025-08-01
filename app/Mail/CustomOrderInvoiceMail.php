@@ -38,16 +38,16 @@ class CustomOrderInvoiceMail extends Mailable
 
         // Buat PDF dari view invoice CUSTOM ORDER Anda
         // Pastikan path-nya benar
-        $pdf = Pdf::loadView('admin.customorder.download', $data);
+        // $pdf = Pdf::loadView('admin.customorder.download', $data);
 
-        // Siapkan nama file untuk lampiran
-        $fileName = 'invoice-custom-' . $this->customOrder->id . '-' . time() . '.pdf';
+        // // Siapkan nama file untuk lampiran
+        // $fileName = 'invoice-custom-' . $this->customOrder->id . '-' . time() . '.pdf';
 
         // Kirim email dengan lampiran PDF
         return $this->subject('Invoice untuk Pesanan Custom Anda')
-                    ->view('emails.custom_order.invoice_email_body', ['order' => $this->customOrder]) // Kita bisa gunakan body email yang sama
-                    ->attachData($pdf->output(), $fileName, [
-                        'mime' => 'application/pdf',
-                    ]);
+                    ->view('emails.custom_order.invoice_email_body', ['order' => $this->customOrder]); // Kita bisa gunakan body email yang sama
+                    // ->attachData($pdf->output(), $fileName, [
+                    //     'mime' => 'application/pdf',
+                    // ]);
     }
 }

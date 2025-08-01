@@ -31,7 +31,7 @@
                                 <h1 style="font-size: 24px; font-weight: 600; color: #333333; margin: 0 0 20px 0;">Pembayaran Berhasil! ✅</h1>
                                 {{-- Gunakan nama dari relasi user --}}
                                 <p style="margin: 0 0 15px 0;">Halo <strong>{{ $order->user->name }}</strong>,</p>
-                                <p style="margin: 0 0 15px 0;">Terima kasih telah melakukan pemesanan custom di Viary Store. Kami telah menerima pembayaran Anda. Invoice lengkap dalam format PDF juga telah kami lampirkan bersama email ini.</p>
+                                <p style="margin: 0 0 15px 0;">Terima kasih telah melakukan pemesanan custom di Viary Store. Kami telah menerima pembayaran Anda</p>
                                 
                                 <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%; margin-top: 30px; border-top: 1px solid #eeeeee;">
                                     <tr><td style="padding-top: 20px;"></td></tr>

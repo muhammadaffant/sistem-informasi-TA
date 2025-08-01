@@ -46,7 +46,6 @@ class LoginController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
-        // Jika autentikasi gagal, kembalikan ke form login dengan pesan error
         throw ValidationException::withMessages([
             'email' => __('auth.failed'),
         ])->errorBag('login');
@@ -58,15 +57,13 @@ class LoginController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function destroy(Request $request)
-    {
-        Auth::logout();
+    // public function destroy(Request $request)
+    // {
+    //     Auth::logout();
 
-        // Invalidate session dan regenerate token untuk keamanan
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        // Arahkan pengguna kembali ke halaman login setelah logout
-        return redirect('/');
-    }
+    //     // Invalidate session dan regenerate token untuk keamanan
+    //     $request->session()->invalidate();
+    //     $request->session()->regenerateToken();
+    //     return redirect('/');
+    // }
 }

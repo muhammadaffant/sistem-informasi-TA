@@ -42,14 +42,14 @@ class OrderInvoiceMail extends Mailable
         ];
 
         // Buat PDF dari view invoice Anda
-        $pdf = Pdf::loadView('frontend.user.invoice.pdf', $data);
+        // $pdf = Pdf::loadView('frontend.user.invoice.pdf', $data);
 
         // Kirim email dengan lampiran PDF
         return $this->subject('Invoice untuk Pesanan #' . $this->order->invoice_no)
                     ->view('emails.order.invoice_email_body') // Body email (bisa dibuat sederhana)
-                    ->with($data)
-                    ->attachData($pdf->output(), 'invoice-'.$this->order->invoice_no.'.pdf', [
-                        'mime' => 'application/pdf',
-                    ]);
+                    ->with($data);
+                    // ->attachData($pdf->output(), 'invoice-'.$this->order->invoice_no.'.pdf', [
+                    //     'mime' => 'application/pdf',
+                    // ]);
     }
 }

@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->text('comment');
-            $table->string('rating'); // 1, 2, 3, 4, 5
-            $table->string('status')->default('pending'); // pending, approved
+            $table->string('rating',5); // 1, 2, 3, 4, 5
+            $table->string('status', 30)->default('pending'); // pending, approved
             $table->text('admin_reply')->nullable();
             $table->timestamp('replied_at')->nullable();
             $table->timestamps();

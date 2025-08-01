@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->string('name', 30);
-            $table->string('file_design')->default('design.jpg');
+            $table->string('file_design', 100)->default('design.jpg');
             $table->text('design_description')->nullable();
             $table->string('fabric_type', 50)->nullable(); // bahan
             // $table->text('sablon_price')->nullable();
@@ -24,7 +24,7 @@ return new class extends Migration
             $table->bigInteger('total_price')->default(0);
             $table->bigInteger('dp_paid')->default(0);
             $table->bigInteger('remaining_payment')->default(0); // sisa pembayaran
-            $table->string('status, 100')->default('Pending');
+            $table->string('status')->default('Pending');
             $table->dateTime('order_date');
             $table->dateTime('completion_date');
             $table->timestamps();

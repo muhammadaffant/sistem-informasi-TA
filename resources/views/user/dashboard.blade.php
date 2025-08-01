@@ -14,7 +14,7 @@
                 <div class="col-md-6">
                     <div class="card">
                         <h3 class="text-center"><span class="text-danger">Hi...</span>
-                            <strong>{{ Auth::user()->name }}</strong> Selamat Datang di Via Store
+                            <strong>{{ Auth::user()->name }}</strong> Selamat Datang di Viary Store
                         </h3>
                     </div>
                 </div>

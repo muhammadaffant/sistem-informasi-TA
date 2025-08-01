@@ -24,6 +24,7 @@ class Regency extends Model
      *
      * @var string
      */
+    public $timestamps = false;
     protected $table = 'regencies';
 
     /**

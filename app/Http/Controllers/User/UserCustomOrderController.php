@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Mail\CustomOrderInvoiceMail;
 use Illuminate\Support\Facades\Mail;
+use App\Models\Province;
+use App\Models\Regency;
+
 
 class UserCustomOrderController extends Controller
 {
@@ -28,25 +31,26 @@ public function store(Request $request)
     $validator = Validator::make($request->all(), [
         'name' => 'required|string|max:255',
         'file_design' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-        // 'jenis_sablon' => 'required|string',
-         'jenis_sablon_id' => 'required|exists:jenis_sablons,id', // Validasi ke ID
+        'jenis_sablon_id' => 'required|exists:jenis_sablons,id',
         'items' => 'required|array|min:1',
         'items.*.qty' => 'nullable|integer|min:0',
         'address' => 'required',
+        'province_id' => 'required|integer',
+        'city_id' => 'required|integer',
+        'district_id' => 'required|integer',
+        'village_id' => 'nullable|integer',
     ]);
 
     if ($validator->fails()) {
         return response()->json(['error' => $validator->errors()->first()], 422);
     }
 
-    // $jenissablon = JenisSablon::where('nama_sablon', $request->jenis_sablon)->first();
     $jenissablon = JenisSablon::find($request->jenis_sablon_id);
     $hargaSablon = $jenissablon ? $jenissablon->harga : 0;
 
-     // Menggabungkan nama kategori dan nama sablon untuk deskripsi
     $namaSablonLengkap = $jenissablon->sablonCategory->name . ' - ' . $jenissablon->nama_sablon;
     
-    // Tahap 1: Hitung total kuantitas dari semua item
+    // Tahap 1: Hitung total kuantitas
     $totalQty = 0;
     $validItems = [];
     foreach ($request->items as $sizeId => $item) {
@@ -68,17 +72,9 @@ public function store(Request $request)
         return response()->json(['error' => 'Anda harus memasukkan jumlah (quantity) minimal pada satu ukuran.'], 422);
     }
     
-    // Tahap 3: Tentukan persentase diskon berdasarkan total kuantitas
-    $discountRate = 0; // dalam desimal, 0.05 = 5%
-    if ($totalQty >= 100) {
-        $discountRate = 0.15; // 15% untuk 100 pcs atau lebih
-    } elseif ($totalQty >= 24) {
-        $discountRate = 0.10; // 10% untuk 24-99 pcs
-    } elseif ($totalQty >= 12) {
-        $discountRate = 0.05; // 5% untuk 12-23 pcs
-    }
+    // Tahap 3: BLOK DISKON DIHAPUS
 
-    // Tahap 4: Hitung ulang harga total dengan diskon & siapkan detail JSON
+    // Tahap 4: Hitung ulang harga total TANPA DISKON
     $totalPrice = 0;
     $orderedItemsDetails = [];
 
@@ -86,13 +82,11 @@ public function store(Request $request)
         $size = $item['size'];
         $qty = $item['quantity'];
 
-        // Harga bahan asli
+        // Harga asli bahan (tanpa diskon)
         $originalBahanPrice = $size->price;
-        // Hitung harga bahan setelah diskon
-        $discountedBahanPrice = $originalBahanPrice * (1 - $discountRate);
 
-        // Harga per item (bahan diskon + sablon)
-        $pricePerItem = $discountedBahanPrice + $hargaSablon;
+        // Harga per item (bahan + sablon)
+        $pricePerItem = $originalBahanPrice + $hargaSablon;
         $subtotal = $pricePerItem * $qty;
         
         $totalPrice += $subtotal;
@@ -101,7 +95,7 @@ public function store(Request $request)
             'size' => $size->nama_size,
             'quantity' => $qty,
             'price' => $originalBahanPrice, // Harga asli bahan
-            'discount_percent' => $discountRate * 100, // Simpan info diskon
+            // 'discount_percent' Dihapus
             'sablon_price' => $hargaSablon,
             'subtotal' => $subtotal,
         ];
@@ -133,8 +127,15 @@ public function store(Request $request)
     $data['order_date'] = now();
     $data['completion_date'] = now()->addWeeks(1);
     
-    $data['province_id'] = $request->province_id;
-    $data['regency_id'] = $request->city_id;
+    $apiProvinceId = $request->province_id;
+    $apiRegencyId = $request->city_id;
+
+    $localProvince = Province::where('rajaongkir_id', $apiProvinceId)->first();
+    $localRegency = Regency::where('rajaongkir_id', $apiRegencyId)->first();
+
+    $data['province_id'] = $localProvince ? $localProvince->id : null;
+    $data['regency_id'] = $localRegency ? $localRegency->id : null;
+    
     $data['district_id'] = $request->district_id;
     $data['village_id'] = $request->village_id ?? 0;
     $data['ongkir'] = (int)($request->ongkir ?? 0);
@@ -144,7 +145,6 @@ public function store(Request $request)
 
     return response()->json(['success' => 'Pesanan Custom Anda berhasil disubmit.']);
 }
-
 
     public function history()
     {

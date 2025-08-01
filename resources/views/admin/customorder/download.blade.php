@@ -93,6 +93,13 @@
         .summary table td {
             padding: 5px;
         }
+        
+        .summary .subtotal-produk {
+            font-weight: bold;
+            border-top: 1px solid #ccc;
+            padding-top: 8px !important;
+            margin-top: 8px;
+        }
 
         .summary .grand-total {
             font-weight: bold;
@@ -121,13 +128,6 @@
         .signature h5 {
             margin-top: 10px;
             font-weight: bold;
-        }
-        
-        /* Style untuk diskon */
-        .discount-info {
-            color: #dc3545; /* Merah */
-            font-size: 0.9em;
-            font-style: italic;
         }
     </style>
 </head>
@@ -172,48 +172,22 @@
             </thead>
             <tbody>
                 @php
-                    // Decode string JSON menjadi array
                     $sizeDetails = json_decode($customOrder->size, true);
-                    
-                    // Inisialisasi variabel untuk kalkulasi total
-                    $totalBahanBeforeDiscount = 0;
-                    $totalDiscountAmount = 0;
                 @endphp
 
-                {{-- Cek jika JSON valid dan merupakan array --}}
                 @if(is_array($sizeDetails) && json_last_error() === JSON_ERROR_NONE)
                     @foreach($sizeDetails as $item)
-                        @php
-                            // Kalkulasi untuk setiap item
-                            $hargaBahanAsli = $item['price'] ?? 0;
-                            $quantity = $item['quantity'] ?? 0;
-                            $discountPercent = $item['discount_percent'] ?? 0;
-                            
-                            $subtotalBahan = $hargaBahanAsli * $quantity;
-                            $discountForItem = $subtotalBahan * ($discountPercent / 100);
-
-                            // Akumulasi untuk ringkasan total
-                            $totalBahanBeforeDiscount += $subtotalBahan;
-                            $totalDiscountAmount += $discountForItem;
-                        @endphp
                         <tr>
                             <td>{{ $customOrder->name }}</td>
                             <td>{{ $item['size'] ?? 'N/A' }}</td>
                             <td>{{ $customOrder->fabric_type }}</td>
-                            {{-- UPDATE: Tampilkan harga asli dan info diskon --}}
-                            <td>
-                                Rp. {{ number_format($hargaBahanAsli) }}
-                                @if($discountPercent > 0)
-                                    <br><span class="discount-info">(-{{ $discountPercent }}%)</span>
-                                @endif
-                            </td>
+                            <td>Rp. {{ number_format($item['price'] ?? 0) }}</td>
                             <td>Rp. {{ number_format($item['sablon_price'] ?? 0) }}</td>
-                            <td>{{ $quantity }}</td>
+                            <td>{{ $item['quantity'] ?? 0 }}</td>
                             <td>Rp. {{ number_format($item['subtotal'] ?? 0) }}</td>
                         </tr>
                     @endforeach
                 @else
-                    {{-- Fallback jika data bukan JSON (untuk order lama) --}}
                     <tr>
                         <td colspan="7">Detail produk tidak tersedia.</td>
                     </tr>
@@ -221,24 +195,28 @@
             </tbody>
         </table>
 
-        {{-- UPDATE: Bagian ringkasan total yang lebih detail --}}
+        @php
+            // Lakukan kalkulasi total bahan dan sablon di sini
+            $totalHargaBahan = 0;
+            if (is_array($sizeDetails)) {
+                foreach ($sizeDetails as $item) {
+                    $totalHargaBahan += ($item['price'] ?? 0) * ($item['quantity'] ?? 0);
+                }
+            }
+            $totalHargaSablon = $customOrder->sablon_price * $customOrder->qty;
+        @endphp
+
         <div class="summary">
             <table>
                 <tr>
                     <td>Total Harga Bahan</td>
-                    <td>Rp. {{ number_format($totalBahanBeforeDiscount) }}</td>
+                    <td>Rp. {{ number_format($totalHargaBahan) }}</td>
                 </tr>
                 <tr>
                     <td>Total Harga Sablon</td>
-                    <td>Rp. {{ number_format($customOrder->sablon_price * $customOrder->qty) }}</td>
+                    <td>Rp. {{ number_format($totalHargaSablon) }}</td>
                 </tr>
-                @if ($totalDiscountAmount > 0)
-                <tr>
-                    <td>Diskon Bahan</td>
-                    <td class="discount-info">- Rp. {{ number_format($totalDiscountAmount) }}</td>
-                </tr>
-                @endif
-                 <tr>
+                <tr class="subtotal-produk">
                     <td>Subtotal Produk</td>
                     <td>Rp. {{ number_format($customOrder->total_price) }}</td>
                 </tr>
