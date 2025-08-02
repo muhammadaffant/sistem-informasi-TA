@@ -175,17 +175,39 @@ public function detail(Request $request)
     ];
 
     $snapToken = \Midtrans\Snap::getSnapToken($params);
+    Order::where('id', $orderId)->update(['snap_token' => $snapToken]);
     Cart::destroy();
 
-    return view('frontend.checkout.detail', [
-        'title' => 'Checkout Detail', 'snapToken' => $snapToken,
-        'orderId' => $orderId, 'carts' => $carts,
-        'total' => $total, 'ongkir' => $validated['shipping_cost'],
-        'name' => $validated['name'], 'phone' => $validated['phone'],
-        'address' => $validated['address'], 'notes' => $validated['notes'],
-    ]);
+      return redirect()->route('user.checkout.payment', ['order' => $orderId]);
 }
 
+    public function paymentPage(Order $order)
+    {
+        // Security check: pastikan order milik user yang sedang login
+        if (Auth::id() !== $order->user_id) {
+            abort(404);
+        }
+
+        // Jika order sudah tidak pending, redirect ke riwayat order
+        if ($order->status !== 'Pending') {
+             $notification = [
+                'message' => 'Order ini sudah diproses dan tidak bisa dibayar ulang.',
+                'alert-type' => 'info',
+            ];
+            return redirect()->route('user.order')->with($notification);
+        }
+
+        $orderItems = OrderItem::with('product')->where('order_id', $order->id)->get();
+        $subtotal = $order->amount - $order->ongkir;
+
+        // Tampilkan view checkout.detail yang lama, tapi dengan data dari DB
+        return view('frontend.checkout.detail', [
+            'title' => 'Checkout Payment', 
+            'order' => $order,
+            'orderItems' => $orderItems,
+            'subtotal' => $subtotal,
+        ]);
+    }
 
 public function checkoutStore(Request $request)
 {

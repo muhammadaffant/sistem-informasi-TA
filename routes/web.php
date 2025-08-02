@@ -362,6 +362,8 @@ Route::post('/review/store', [ReviewController::class, 'store'])->name('review.s
     Route::post('/user/checkout/detail', [UserCheckoutController::class, 'detail'])->name('user.checkout.detail');
     Route::post('/user/checkout-store', [UserCheckoutController::class, 'checkoutStore'])->name('checkout.store');
     Route::delete('/user/order/delete/{id}', [UserCheckoutController::class, 'destroy'])->name('user.order.delete');
+    Route::get('/user/checkout/payment/{order}', [UserCheckoutController::class, 'paymentPage'])->name('user.checkout.payment');
+
     
     // AJAX Routes - Mengarah ke method API Komerce yang baru
     Route::get('/api/get-provinces', [UserCheckoutController::class, 'getProvinces'])->name('api.get.provinces');
