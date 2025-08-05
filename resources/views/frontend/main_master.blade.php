@@ -301,28 +301,33 @@ function productView(id) {
 
     // function add to cart (MODIFIKASI)
  // function add to cart (MODIFIKASI)
+// function add to cart (MODIFIKASI LENGKAP)
 function addToCart() {
     let product_id = $('#product_id').val();
     let variant_id = $('#variant_id').val();
     let qty = $('#qty').val();
-    let color = $('#color option:selected').text(); // <-- TAMBAHKAN INI
+    let color = $('#color option:selected').text();
 
     if (!variant_id) {
-        Swal.fire({ title: "Gagal", text: "Silakan pilih ukuran terlebih dahulu.", icon: "error" });
+        Swal.fire({
+            title: "Gagal",
+            text: "Silakan pilih ukuran terlebih dahulu.",
+            icon: "error"
+        });
         return;
     }
 
     $.ajax({
         type: "POST",
         dataType: "json",
+        // Pastikan URL ini mengarah ke controller yang benar
+        url: "/cart/data/store/" + product_id, 
         data: {
             variant_id: variant_id,
             qty: qty,
-            color: color // <-- TAMBAHKAN INI
+            color: color
         },
-        url: "/cart/data/store/" + product_id,
         success: function(data) {
-            // ... (sisa kode sukses Anda sudah benar)
             miniCart();
             $('#closeModal').click();
             Swal.fire({
@@ -333,9 +338,21 @@ function addToCart() {
                 icon: "success"
             });
         },
-        error: function(xhr) {
-            // ... (sisa kode error Anda sudah benar)
+        // ================== MODIFIKASI DIMULAI DI SINI ==================
+        error: function(xhr, status, error) {
+            // Ambil response error dari server (yang kita kirim dari controller)
+            let response = xhr.responseJSON;
+            
+            // Tampilkan notifikasi error menggunakan SweetAlert
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menambahkan',
+                // Tampilkan pesan error spesifik dari controller
+                // Jika tidak ada, tampilkan pesan default
+                text: response.error ? response.error : 'Terjadi kesalahan pada server.',
+            });
         }
+        // ================== MODIFIKASI SELESAI DI SINI ==================
     });
 }
 
@@ -408,6 +425,42 @@ function addToCart() {
 
                 }
             })
+        }
+
+        function updateVariantDetails(variant) {
+            if (!variant) return;
+
+            // Update harga
+            if (variant.discount > 0) {
+                $('#price').text('Rp. ' + formatRupiah(variant.price_after_discount));
+                $('#oldprice').text('Rp. ' + formatRupiah(variant.price)).show();
+            } else {
+                $('#price').text('Rp. ' + formatRupiah(variant.price));
+                $('#oldprice').hide();
+            }
+            
+            // ================== MODIFIKASI DIMULAI DI SINI ==================
+
+            // Set atribut 'max' pada input kuantitas sesuai stok varian
+            $('#qty').attr('max', variant.quantity);
+
+            // Update stok
+            if (variant.quantity > 0) {
+                // Tampilkan jumlah stok yang sebenarnya
+                $('#pstock').html('<strong>' + variant.quantity + '</strong> Tersisa'); 
+                $('button[onclick="addToCart()"]').prop('disabled', false);
+                $('#qty').prop('disabled', false); // Pastikan input qty bisa diisi
+            } else {
+                $('#pstock').html('<span class="badge badge-danger">Habis</span>');
+                $('button[onclick="addToCart()"]').prop('disabled', true);
+                $('#qty').prop('disabled', true); // Nonaktifkan input qty jika stok habis
+            }
+            
+            // ================== MODIFIKASI SELESAI DI SINI ==================
+
+
+            // Simpan ID varian yang dipilih
+            $('#variant_id').val(variant.id);
         }
 
         // product wislist
@@ -585,17 +638,28 @@ function addToCart() {
         }
 
         // cart increment
-        function cartIncrement(rowId) {
-            $.ajax({
-                type: "GET",
-                url: "/cart-increment/" + rowId,
-                dataType: "json",
-                success: function(response) {
-                    cart()
-                    miniCart()
-                }
-            })
-        }
+        function cartIncrement(rowId) { // <--- SESUAIKAN NAMANYA
+                $.ajax({
+                    type: "GET",
+                    // Pastikan URL ini sesuai dengan route Anda
+                    url: "/cart-increment/" + rowId, 
+                    dataType: "json",
+                    success: function(response) {
+                        // Cek jika response adalah pesan error kustom kita
+                        if (response.error) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: response.error,
+                            });
+                        } else {
+                            // Jika berhasil, update tampilan keranjang
+                            cart();
+                            miniCart();
+                        }
+                    }
+                });
+            }
 
         // cart decrement
         function cartDecrement(rowId) {

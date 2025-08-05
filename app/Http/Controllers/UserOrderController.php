@@ -61,4 +61,34 @@ class UserOrderController extends Controller
 
         return $pdf->download($fileName);
     }
+
+    public function requestRefund(Request $request, $id)
+{
+    // Validasi input dari form, termasuk data rekening
+    $request->validate([
+        'refund_reason' => 'required|string|max:1000',
+        'refund_bank_name' => 'required|string|max:50',
+        'refund_account_name' => 'required|string|max:100',
+        'refund_account_number' => 'required|string|max:50',
+    ]);
+
+    $order = Order::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
+
+    if ($order->status != 'Success' || !is_null($order->refund_status)) {
+        $notification = ['message' => 'Pesanan ini tidak dapat di-refund.','alert-type' => 'error'];
+        return redirect()->back()->with($notification);
+    }
+
+    // Update status dan simpan data rekening ke database
+    $order->update([
+        'refund_status' => 'requested',
+        'refund_reason' => $request->refund_reason,
+        'refund_bank_name' => $request->refund_bank_name,
+        'refund_account_name' => $request->refund_account_name,
+        'refund_account_number' => $request->refund_account_number,
+    ]);
+
+    $notification = ['message' => 'Permintaan refund berhasil dikirim.','alert-type' => 'success'];
+    return redirect()->back()->with($notification);
+}
 }

@@ -81,6 +81,46 @@ class AdminOrderController extends Controller
 
 
         ->editColumn('status', fn($q) => $this->renderStatusColumns($q))
+        ->addColumn('status_pesanan', function($q) {
+               // Jika ada permintaan refund, tampilkan detail rekening bank
+            if ($q->refund_status == 'requested') {
+                $html = '<span class="badge badge-warning">Menunggu Persetujuan Refund</span>';
+                $html .= '<div class="mt-2" style="font-size: 12px; text-align: left; white-space: normal;">';
+                $html .= '<strong>Bank:</strong> ' . e($q->refund_bank_name) . '<br>';
+                $html .= '<strong>A/N:</strong> ' . e($q->refund_account_name) . '<br>';
+                $html .= '<strong>No. Rek:</strong> ' . e($q->refund_account_number) . '<br>';
+                $html .= '<strong>Alasan:</strong> ' . e($q->refund_reason);
+                $html .= '</div>';
+                return $html;
+            }
+            if ($q->refund_status == 'refunded') {
+                return '<span class="badge badge-danger">Dana Dikembalikan</span>';
+            }
+            
+            // ================== PERUBAHAN DI SINI ==================
+            // Logika untuk menampilkan dropdown status pesanan
+            $selectedProcessing = $q->status_pesanan == "proses" ? "selected" : "";
+            $selectedShipped = $q->status_pesanan == "dikirim" ? "selected" : "";
+            $selectedCompleted = $q->status_pesanan == "selesai" ? "selected" : "";
+            $noStatusSelected = is_null($q->status_pesanan) ? 'selected' : '';
+
+            $dropdownHTML = '
+                <select class="form-control status-pesanan mt-2" data-id="'. $q->id .'">
+                    <option value="" disabled '. $noStatusSelected .'>Pilih Status</option>
+                    <option value="proses" '. $selectedProcessing .'>Proses</option>
+                    <option value="dikirim" '. $selectedShipped .'>Dikirim</option>
+                    <option value="selesai" '. $selectedCompleted .'>Selesai</option>
+                </select>
+            ';
+
+            // Jika refund ditolak, tampilkan badge DAN dropdown
+            if ($q->refund_status == 'rejected') {
+                return '<span class="badge badge-secondary">Refund Ditolak</span>' . $dropdownHTML;
+            }
+            
+            // Jika tidak ada urusan refund, tampilkan dropdown saja
+            return $dropdownHTML;
+            })
         ->editColumn('aksi', fn($q) => $this->renderActionButtons($q))
         ->addColumn('product_name', function($order) {
             return $order->orderItems->map(function($item) {
@@ -199,13 +239,61 @@ class AdminOrderController extends Controller
     /**
      * Render aksi buttons
      */
-    protected function renderActionButtons($q)
-    {
-        // <button onclick="editForm(`' . route('admin.orders.show', $q->id) . '`)" class="btn btn-xs btn-primary mr-1"><i class="fa fa-eye"></i></button>
-        return '
-                <a href="' . route('admin.orders.download', $q->id) . '" class="btn btn-xs btn-danger mr-1"><i class="fa fa-download"></i></a>
-                ';
+   protected function renderActionButtons($q)
+{
+    if ($q->refund_status === 'requested') {
+        // Tombol untuk menandai SUDAH transfer manual
+        $approveForm = '
+            <form action="'. route('admin.orders.refund.manual_process') .'" method="POST" class="d-inline" onsubmit="return confirm(\'PASTIKAN ANDA SUDAH TRANSFER DANA. Lanjutkan?\')">
+                '. csrf_field() .'
+                <input type="hidden" name="order_id" value="'. $q->id .'">
+                <input type="hidden" name="action" value="approve">
+                <button type="submit" class="btn btn-success btn-sm" title="Tandai Sudah Direfund"><i class="fas fa-check"></i></button>
+            </form>';
+
+        // Tombol untuk menolak
+        $rejectForm = '
+            <form action="'. route('admin.orders.refund.manual_process') .'" method="POST" class="d-inline" onsubmit="return confirm(\'Anda yakin ingin MENOLAK refund ini?\')">
+                '. csrf_field() .'
+                <input type="hidden" name="order_id" value="'. $q->id .'">
+                <input type="hidden" name="action" value="reject">
+                <button type="submit" class="btn btn-danger btn-sm" title="Tolak Refund"><i class="fas fa-times"></i></button>
+            </form>';
+
+        return $approveForm . ' ' . $rejectForm;
     }
+    
+    return '<a href="' . route('admin.orders.download', $q->id) . '" class="btn btn-xs btn-primary mr-1" title="Download Invoice"><i class="fa fa-download"></i></a>';
+}
+
+public function manualProcessRefund(Request $request)
+{
+    $request->validate([
+        'order_id' => 'required|exists:orders,id',
+        'action' => 'required|in:approve,reject',
+    ]);
+
+    $order = Order::findOrFail($request->order_id);
+    
+    if ($order->refund_status !== 'requested') {
+        return back()->with('error', 'Status refund pesanan ini sudah tidak valid.');
+    }
+
+    if ($request->action === 'approve') {
+        // Hanya update database, TIDAK ADA API CALL
+        $order->update([
+            'status'         => 'Refunded',
+            'status_pesanan' => 'dibatalkan',
+            'refund_status'  => 'refunded',
+        ]);
+        return back()->with('success', 'Pesanan telah ditandai sebagai direfund.');
+    }
+    
+    if ($request->action === 'reject') {
+        $order->update(['refund_status' => 'rejected']);
+        return back()->with('success', 'Permintaan refund telah ditolak.');
+    }
+}
 
     protected function renderStatusColumns($q)
     {

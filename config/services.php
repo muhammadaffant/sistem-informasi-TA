@@ -35,5 +35,9 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('app.url').'/auth-google-callback', // atau hardcode URL jika perlu
     ],
+    //     'midtrans' => [
+    //     'server_key' => env('MIDTRANS_SERVER_KEY'),
+    //     'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
+    // ],
 
 ];

@@ -279,6 +279,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
     });
 
     Route::get('/products/generate-code', [AdminProductController::class, 'generateProductCode'])->name('admin.products.generateCode');
+    Route::post('/orders/refund/manual-process', [AdminOrderController::class, 'manualProcessRefund'])->name('admin.orders.refund.manual_process');
 
     // Role User
     Route::group(['middleware' => ['role:user', 'verified']], function () {
@@ -363,6 +364,8 @@ Route::post('/review/store', [ReviewController::class, 'store'])->name('review.s
     Route::post('/user/checkout-store', [UserCheckoutController::class, 'checkoutStore'])->name('checkout.store');
     Route::delete('/user/order/delete/{id}', [UserCheckoutController::class, 'destroy'])->name('user.order.delete');
     Route::get('/user/checkout/payment/{order}', [UserCheckoutController::class, 'paymentPage'])->name('user.checkout.payment');
+    
+    Route::post('/order/refund-request/{id}', [UserOrderController::class, 'requestRefund'])->name('user.order.refund_request');
 
     
     // AJAX Routes - Mengarah ke method API Komerce yang baru

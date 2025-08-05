@@ -103,20 +103,6 @@
                     name: 'status_pesanan',
                     orderable: false,
                     searchable: false,
-                    render: function(data, type, row) {
-                        let selectedProcessing = data == "proses" ? "selected" : "";
-                        let selectedShipped = data == "dikirim" ? "selected" : "";
-                        let selectedCompleted = data == "selesai" ? "selected" : "";
-
-                        return `
-                            <select class="form-control status-pesanan" data-id="${row.id}">
-                                <option value="" disabled selected>Pilih Status</option>
-                                <option value="proses" ${selectedProcessing}>Proses</option>
-                                <option value="dikirim" ${selectedShipped}>Dikirim</option>
-                                <option value="selesai" ${selectedCompleted}>Selesai</option>
-                            </select>
-                        `;
-                    }
 
                 },
                 {
