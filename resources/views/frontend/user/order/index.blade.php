@@ -153,7 +153,7 @@
                         </div>
                         <div class="form-group">
                             <label for="refund_account_number">Nomor Rekening <span class="text-danger">*</span></label>
-                            <input type="text" name="refund_account_number" class="form-control" required placeholder="Contoh: 1234567890">
+                            <input type="text" name="refund_account_number" class="form-control" required>
                         </div>
                     </div>
                     <div class="modal-footer">

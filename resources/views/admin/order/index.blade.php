@@ -15,7 +15,7 @@
                         <th>Nama Produk</th>
                         <th>Size</th>
                         <th>Nama Lengkap</th>
-                        <th>Email</th>
+                        {{-- <th>Email</th> --}}
                         <th>Nomor Hp</th>
                         <th>Alamat</th>
                         <th>Kode Pos</th>
@@ -73,9 +73,9 @@
                 {
                     data: 'name'
                 },
-                {
-                    data: 'email'
-                },
+                // {
+                //     data: 'email'
+                // },
                 {
                     data: 'phone'
                 },
