@@ -37,7 +37,7 @@
     <div class="row">
         <div class="col-md-12 col-12">
             <div class="form-group">
-                <label for="design_description">Deskripsi Desain</label>
+                <label for="design_description">Warna</label>
                 <textarea id="design_description" class="form-control" rows="3" readonly></textarea>
             </div>
         </div>

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -19,12 +20,18 @@ class AdminLaporanCustomOrderController extends Controller
 
     public function data(Request $request)
     {
+        // Memulai query dengan relasi user
         $query = CustomOrder::with('user');
 
-        if ($request->has('start_date') && $request->has('end_date')) {
-            $startDate = Carbon::parse($request->input('start_date'))->startOfDay();
-            $endDate = Carbon::parse($request->input('end_date'))->endOfDay();
-            $query->whereBetween('order_date', [$startDate, $endDate]);
+        // Menerapkan filter tanggal hanya jika inputnya ada
+        // Mirip dengan LaporanPenjualanController
+        if ($request->filled('start_date')) {
+            // Gunakan whereDate untuk perbandingan tanggal yang lebih efisien
+            $query->whereDate('order_date', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('order_date', '<=', $request->end_date);
         }
 
         return DataTables::of($query)
@@ -32,11 +39,9 @@ class AdminLaporanCustomOrderController extends Controller
             ->addColumn('user_name', function (CustomOrder $customOrder) {
                 return $customOrder->user->name ?? 'N/A';
             })
-            // Mengembalikan nilai dari kolom 'design_description'
             ->addColumn('design_description', function (CustomOrder $customOrder) {
                 return $customOrder->design_description ?? 'N/A';
             })
-            // BARU: Menambahkan kolom untuk Tipe Kain
             ->addColumn('fabric_type', function (CustomOrder $customOrder) {
                 return $customOrder->fabric_type ?? 'N/A';
             })
@@ -57,7 +62,8 @@ class AdminLaporanCustomOrderController extends Controller
                 return $customOrder->status;
             })
             ->addColumn('order_date_formatted', function (CustomOrder $customOrder) {
-                return Carbon::parse($customOrder->order_date)->format('d M Y H:i');
+                // Pastikan order_date tidak null sebelum parsing
+                return $customOrder->order_date ? Carbon::parse($customOrder->order_date)->format('d M Y H:i') : '-';
             })
             ->rawColumns(['total_price_formatted', 'ongkir_formatted', 'total_with_ongkir_formatted'])
             ->make(true);
@@ -72,10 +78,11 @@ class AdminLaporanCustomOrderController extends Controller
         if ($startDate && $endDate) {
             $fileName .= '-' . Carbon::parse($startDate)->format('Ymd') . '-' . Carbon::parse($endDate)->format('Ymd');
         } else if ($startDate) {
-            $fileName .= '-' . Carbon::parse($startDate)->format('Ymd');
+            $fileName .= '-dari-' . Carbon::parse($startDate)->format('Ymd');
         } else if ($endDate) {
-            $fileName .= '-' . Carbon::parse($endDate)->format('Ymd');
+            $fileName .= '-sampai-' . Carbon::parse($endDate)->format('Ymd');
         }
+        
         $fileName .= '.xlsx';
 
         return Excel::download(new CustomOrderReportExport($startDate, $endDate), $fileName);

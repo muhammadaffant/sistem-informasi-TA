@@ -54,7 +54,7 @@
                             <div class="text-center" style="margin-top: 20px;">
                                 <p>Atau login dengan</p>
                                 <a href="{{ route('auth.google.redirect') }}" class="btn btn-danger">
-                                    <i class="fa fa-google"></i> Login dengan Google
+                                    <i class="fa fa-google"></i>oogle
                                 </a>
                             </div>
                         </form>

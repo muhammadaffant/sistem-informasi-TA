@@ -31,9 +31,9 @@
         <x-table>
             <x-slot name="thead">
                 <th>No</th>
-                <th>ID Custom Order</th>
+                {{-- <th>ID Custom Order</th> --}}
                 <th>Nama Pelanggan</th>
-                <th>Deskripsi Desain</th>
+                <th>Warna</th>
                 <th>Tipe Bahan</th>
                 <th>Jumlah Barang</th>
                 <th>Total Harga Barang</th>
@@ -82,7 +82,7 @@
             },
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
-                { data: 'id', name: 'id' },
+                // { data: 'id', name: 'id' },
                 { data: 'user_name', name: 'user.name' },
                 // Memastikan 'Deskripsi Desain' menggunakan 'design_description'
                 { data: 'design_description', name: 'design_description', orderable: false, searchable: false },

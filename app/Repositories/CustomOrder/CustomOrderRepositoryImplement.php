@@ -22,7 +22,7 @@ class CustomOrderRepositoryImplement extends Eloquent implements CustomOrderRepo
 
     public function getData()
     {
-        return $this->model->with('user')->orderby('id', 'DESC')->get();
+        return $this->model->with('user')->oldest()->get();
     }
 
     public function store($data)

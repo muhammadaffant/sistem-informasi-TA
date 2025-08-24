@@ -95,7 +95,7 @@
                                             @endif
 
                                             {{-- =================== LOGIKA BARU UNTUK TOMBOL REFUND =================== --}}
-                                            @if ($item->status == 'Success' && $item->status_pesanan != 'dikirim' && is_null($item->refund_status))
+                                            @if ($item->status == 'Success' && $item->status_pesanan != 'dikirim' && is_null($item->refund_status) && now()->diffInHours($item->created_at) < 24)
                                                 <button type="button" class="btn btn-sm btn-warning" data-toggle="modal" data-target="#refundModal{{ $item->id }}" title="Ajukan Refund">
                                                     <i class="fa fa-undo"></i> Refund
                                                 </button>

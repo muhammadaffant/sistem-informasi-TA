@@ -22,7 +22,7 @@ class ProductRepositoryImplement extends Eloquent implements ProductRepository
 
     public function getData()
     {
-        return $this->model->with(['variants','category', 'brand', 'subCategory', 'subSubCategory', 'multiImages'])->latest()->get();
+        return $this->model->with(['variants','category', 'brand', 'subCategory', 'subSubCategory', 'multiImages'])->oldest()->get();
     }
 
     public function store($data)

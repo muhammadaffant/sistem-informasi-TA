@@ -40,7 +40,7 @@ class CategoryServiceImplement extends ServiceApi implements CategoryService
     public function store($data)
     {
         $validator = Validator::make($data, [
-            'category_name' => 'required',
+            'category_name' => 'required|unique:categories,category_name'
             // 'category_icon' => 'required',
         ]);
 
