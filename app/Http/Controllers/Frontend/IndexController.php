@@ -116,6 +116,32 @@ class IndexController extends Controller
         return back()->with('success', 'Profil berhasil diperbarui!');
     }
 
+    public function refreshGoogleAvatar()
+    {
+        $user = Auth::user();
+        
+        if (!$user->google_id) {
+            return back()->with('error', 'Akun Anda tidak terhubung dengan Google.');
+        }
+
+        try {
+            // Ambil data terbaru dari Google (jika perlu)
+            // Untuk sekarang, kita hanya memberikan opsi untuk menghapus avatar Google
+            return back()->with('info', 'Untuk memperbarui avatar Google, silakan logout dan login kembali menggunakan Google.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal memperbarui avatar Google.');
+        }
+    }
+
+    public function removeGoogleAvatar()
+    {
+        $user = Auth::user();
+        $user->google_avatar_url = null;
+        $user->save();
+
+        return back()->with('success', 'Avatar Google berhasil dihapus. Sekarang menggunakan avatar default.');
+    }
+
     public function changePassword()
     {
         $id = Auth::user()->id;

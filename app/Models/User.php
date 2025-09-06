@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
@@ -31,7 +32,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'username',
         'password',
         'email_verified_at',
-        'numberphone'
+        'numberphone',
+        'google_avatar_url'
     ];
     public function reviews()
     {
@@ -66,4 +68,33 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $appends = [
         'profile_photo_url',
     ];
+
+    /**
+     * Get the user's profile photo URL with Google avatar priority.
+     *
+     * @return string
+     */
+    public function getProfilePhotoUrlAttribute()
+    {
+        // Prioritas: Google avatar, kemudian Jetstream photo, kemudian default
+        if ($this->google_avatar_url) {
+            return $this->google_avatar_url;
+        }
+        
+        if ($this->profile_photo_path) {
+            return $this->getProfilePhotoUrlFromPath();
+        }
+        
+        return $this->defaultProfilePhotoUrl();
+    }
+
+    /**
+     * Get profile photo URL from path (Jetstream method).
+     */
+    private function getProfilePhotoUrlFromPath()
+    {
+        return $this->profile_photo_path
+                    ? Storage::disk($this->profilePhotoDisk())->url($this->profile_photo_path)
+                    : $this->defaultProfilePhotoUrl();
+    }
 }

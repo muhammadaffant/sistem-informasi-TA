@@ -10,7 +10,8 @@ use App\Http\Controllers\Frontend\{
 
 use App\Http\Controllers\{
     DashboardController,
-    UserOrderController
+    UserOrderController,
+    KaryawanController
 };
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\GoogleController;
@@ -281,6 +282,18 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
     Route::get('/products/generate-code', [AdminProductController::class, 'generateProductCode'])->name('admin.products.generateCode');
     Route::post('/orders/refund/manual-process', [AdminOrderController::class, 'manualProcessRefund'])->name('admin.orders.refund.manual_process');
 
+    // Route : Karyawan (Available for admin and owner)
+    Route::group(['middleware' => ['role:admin|owner']], function () {
+        Route::controller(KaryawanController::class)->prefix('karyawan')->as('karyawan.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{karyawan}', 'show')->name('show');
+            Route::put('/{karyawan}', 'update')->name('update');
+            Route::delete('/{karyawan}', 'destroy')->name('destroy');
+            Route::post('/calculate-gaji-bersih', 'calculateGajiBersih')->name('calculate.gaji.bersih');
+        });
+    });
+
     // Role User
     Route::group(['middleware' => ['role:user', 'verified']], function () {
         // Route : User Custome Order
@@ -291,6 +304,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
             Route::post('/custom-order/payment', 'customeOrderStore')->name('customorder.payment');
             Route::get('/custom-order/{id}/detail', 'detail')->name('customorder.detail');
             Route::post('/calculate-price', 'calculatePrice')->name('customorder.calculate'); 
+            Route::post('/calculate-weight', 'calculateWeight')->name('customorder.calculate.weight');
         });
     });
 });
@@ -312,6 +326,8 @@ Route::get('/', [IndexController::class, 'index'])->name('home.index');
 Route::get('/user/logout', [IndexController::class, 'userLogout'])->name('user.logout');
 Route::get('/user/profile/edit', [IndexController::class, 'userProfileEdit'])->name('user.profile.edit');
 Route::post('/user/profile/update', [IndexController::class, 'userProfileUpdate'])->name('user.profile.update');
+Route::get('/user/refresh/google/avatar', [IndexController::class, 'refreshGoogleAvatar'])->name('user.refresh.google.avatar');
+Route::get('/user/remove/google/avatar', [IndexController::class, 'removeGoogleAvatar'])->name('user.remove.google.avatar');
 Route::get('/user/change/password', [IndexController::class, 'changePassword'])->name('change.password');
 Route::post('/user/update/password', [IndexController::class, 'userUpdatePassword'])->name('user.update.password');
 Route::get('/detail/{id}/{slug}', [IndexController::class, 'detail']);
@@ -377,4 +393,6 @@ Route::post('/review/store', [ReviewController::class, 'store'])->name('review.s
     Route::get('/api/get-sizes/{bahan_id}', [UserCustomOrderController::class, 'getSizes'])->name('api.get.sizes');
     // Tambahkan route ini
     Route::get('/api/get-sablon-details/{categoryId}', [UserCustomOrderController::class, 'getSablonDetails'])->name('api.get.sablon.details');
+    // Route untuk estimasi hari pengerjaan
+    Route::post('/api/calculate-estimation', [UserCustomOrderController::class, 'calculateEstimation'])->name('api.calculate.estimation');
     // Route::resource('sablon-category', App\Http\Controllers\Admin\SablonCategoryController::class, ['as' => 'admin']);

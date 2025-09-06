@@ -15,6 +15,7 @@
                     <x-slot name="thead">
                         <th>No</th>
                         <th>Nama Bahan</th>
+                        <th>Berat (gram)</th>
                         {{-- <th>Harga Bahan</th> --}}
                         {{-- <th>Ketengan</th> --}}
                         <th>Aksi</th>
@@ -51,6 +52,9 @@
                 },
                 {
                     data: 'nama_bahan'
+                },
+                {
+                    data: 'weight'
                 },
                 // {
                 //     data: 'price'

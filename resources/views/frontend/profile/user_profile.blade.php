@@ -20,6 +20,43 @@
                             <br><br>Edit Profile
                         </h3>
 
+                        <!-- Profile Photo Section -->
+                        <div class="text-center mb-4" style="padding: 20px;">
+                            <div class="profile-photo-container" style="position: relative; display: inline-block;">
+                                <img 
+                                    src="{{ Auth::user()->profile_photo_url }}" 
+                                    alt="{{ Auth::user()->name }}" 
+                                    class="rounded-circle" 
+                                    style="width: 120px; height: 120px; object-fit: cover; border: 4px solid #dee2e6;"
+                                >
+                                @if(Auth::user()->google_avatar_url)
+                                    {{-- <small class="d-block mt-2 text-muted">
+                                        <i class="fa fa-google text-danger"></i> 
+                                        Avatar dari Google
+                                    </small> --}}
+                                    <div class="mt-2">
+                                        <a href="{{ route('user.remove.google.avatar') }}" 
+                                           class="btn btn-sm btn-outline-secondary"
+                                           onclick="return confirm('Yakin ingin menghapus avatar Google?')">
+                                            <i class="fa fa-times"></i> Hapus Avatar Google
+                                        </a>
+                                    </div>
+                                @else
+                                    <small class="d-block mt-2 text-muted">
+                                        Avatar Default
+                                    </small>
+                                    @if(Auth::user()->google_id)
+                                        <div class="mt-2">
+                                            <small class="d-block text-info">
+                                                <i class="fa fa-info-circle"></i> 
+                                                Untuk menggunakan avatar Google, logout dan login kembali dengan Google
+                                            </small>
+                                        </div>
+                                    @endif
+                                @endif
+                            </div>
+                        </div>
+
                         @if(session('success'))
                             <div class="alert alert-success" id="alert-success">
                                 {{ session('success') }}

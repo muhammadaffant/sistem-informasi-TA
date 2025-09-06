@@ -12,9 +12,10 @@
         </div>
         <div class="col-md-6 col-12">
             <div class="form-group">
-                <label for="file_design_label">Desain</label>
-                <div id="file_design" class="mt-2" style="max-height: 200px; overflow: auto; border: 1px solid #ddd; padding: 5px;">
-                    </div>
+                <label for="file_design_label">Desain Kaos</label>
+                <div id="design_container" class="mt-2">
+                    <!-- Akan diisi secara dinamis oleh JavaScript -->
+                </div>
             </div>
         </div>
     </div>
@@ -22,7 +23,7 @@
     <div class="row">
         <div class="col-md-6 col-12">
             <div class="form-group">
-                <label for="position">Penempatan Logo</label>
+                <label for="position">Penempatan Desain</label>
                 <input type="text" name="position" id="position" class="form-control" readonly>
             </div>
         </div>
@@ -52,14 +53,26 @@
         </div>
         <div class="col-md-6 col-12">
             <div class="form-group">
-                <label for="sablon_price">Harga Sablon</label>
+                <label for="sablon_price">Total Harga Sablon</label>
                 <input type="text" id="sablon_price" class="form-control" readonly>
             </div>
         </div>
     </div>
 
-    {{-- Container Baru untuk Rincian Ukuran --}}
+    {{-- Container untuk Detail Variasi --}}
     <div class="row">
+        <div class="col-md-12">
+            <div class="form-group">
+                <label for="variations-detail-container">Detail Variasi Pesanan</label>
+                <div id="variations-detail-container" class="mt-1" style="border: 1px solid #e0e0e0; padding: 15px; border-radius: 4px; background-color: #f9f9f9;">
+                    <!-- Akan diisi via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Container Legacy untuk Rincian Ukuran (Backward Compatibility) --}}
+    <div class="row" id="legacy-size-container" style="display: none;">
         <div class="col-md-12">
             <div class="form-group">
                 <label for="size-detail-container">Rincian Ukuran & Jumlah</label>

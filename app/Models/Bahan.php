@@ -10,6 +10,8 @@ class Bahan extends Model
     // protected $table = 'bahans';
     protected $guarded = ['id'];
 
+    protected $fillable = ['nama_bahan', 'weight'];
+
         public function sizes()
     {
         return $this->hasMany(Size::class, 'bahan_id');

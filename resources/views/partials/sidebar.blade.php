@@ -15,9 +15,9 @@
 
             @if (auth::user()->hasRole('admin'))
                 <li>
-                    <a href="{{ route('admin.layanan.index') }}" class="nav-link"><i
+                    {{-- <a href="{{ route('admin.layanan.index') }}" class="nav-link"><i
                             class="fas fa-concierge-bell"></i><span>Data
-                            Layanan</span></a>
+                            Layanan</span></a> --}}
                 </li>
 
                 <li>
@@ -52,6 +52,12 @@
                     </a>
                 </li>
 
+                {{-- <li>
+                    <a class="nav-link" href="{{ route('karyawan.index') }}"><i class="fas fa-users"></i>
+                        <span>Data Karyawan</span>
+                    </a>
+                </li> --}}
+
                 <li class="dropdown">
                     <a href="#" class="nav-link has-dropdown" data-toggle="dropdown"><i
                             class="fas fa-shopping-cart"></i>
@@ -72,6 +78,12 @@
                         <li><a class="nav-link" href="{{ route('admin.customorders.index') }}">Custom Order</a></li>
                         <li><a class="nav-link" href="{{ route('owner.orders.index') }}">Order</a></li>
                     </ul>
+                </li>
+
+                <li>
+                    <a class="nav-link" href="{{ route('karyawan.index') }}"><i class="fas fa-users"></i>
+                        <span>Data Karyawan</span>
+                    </a>
                 </li>
             @endif
 

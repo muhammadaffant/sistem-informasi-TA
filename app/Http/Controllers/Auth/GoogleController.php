@@ -40,6 +40,13 @@ class GoogleController extends Controller
                     $user->email_verified_at = Carbon::now();
                     $user->save();
                 }
+
+                // Update Google avatar URL jika tersedia
+                if ($googleUser->avatar && $user->google_avatar_url !== $googleUser->avatar) {
+                    $user->google_avatar_url = $googleUser->avatar;
+                    $user->save();
+                }
+
                 Auth::login($user);
             } else {
                 $newUser = User::create([
@@ -47,6 +54,7 @@ class GoogleController extends Controller
                     'email' => $googleUser->email,
                     'username' => strstr($googleUser->email, '@', true) . Str::random(3),
                     'google_id' => $googleUser->id,
+                    'google_avatar_url' => $googleUser->avatar,
                     'password' => Hash::make(Str::random(24)),
                     'email_verified_at' => Carbon::now(),
                     // 'numberphone'

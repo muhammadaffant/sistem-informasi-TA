@@ -26,6 +26,10 @@
                         <p><strong>Bahan Kain:</strong> {{ $customOrder->fabric_type }}</p>
                         <p><strong>Jenis Sablon:</strong> {{ $customOrder->jenis_sablon }}</p>
                         <p><strong>Warna:</strong> {{ $customOrder->design_description }}</p>
+                        <p><strong>Total Kuantitas:</strong> {{ $customOrder->qty }} pcs</p>
+                        @if($customOrder->total_weight)
+                        <p><strong>Total Berat:</strong> <span class="badge badge-secondary">{{ $customOrder->formatted_weight }}</span></p>
+                        @endif
                         <hr>
                         <h5>Rincian Item:</h5>
                         @php
@@ -107,6 +111,44 @@
                         </p>
                         
                         <p><strong>Status Pesanan:</strong> <span class="badge badge-pill badge-primary">{{ $customOrder->status_pesanan ?? 'Belum Diproses' }}</span></p>
+
+                        {{-- Tampilkan Estimasi Pengerjaan --}}
+                        @if($customOrder->estimated_days)
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading"><i class="fas fa-clock"></i> Estimasi Pengerjaan</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Waktu Pengerjaan:</strong> {{ $customOrder->estimated_days }} hari kerja</p>
+                                    <p class="mb-1"><strong>Tanggal Pesan:</strong> {{ \Carbon\Carbon::parse($customOrder->order_date)->format('d M Y') }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Perkiraan Selesai:</strong> 
+                                        <span class="text-primary font-weight-bold">
+                                            {{ \Carbon\Carbon::parse($customOrder->completion_date)->format('d M Y') }}
+                                        </span>
+                                    </p>
+                                    <p class="mb-0">
+                                        <small class="text-muted">
+                                            @php
+                                                $days = $customOrder->estimated_days;
+                                                if ($days <= 3) {
+                                                    echo "Pesanan cepat - siap dalam 3 hari kerja";
+                                                } elseif ($days <= 5) {
+                                                    echo "Pesanan standar - siap dalam 5 hari kerja";
+                                                } elseif ($days <= 7) {
+                                                    echo "Pesanan sedang - membutuhkan 1 minggu";
+                                                } elseif ($days <= 10) {
+                                                    echo "Pesanan besar - membutuhkan 10 hari kerja";
+                                                } else {
+                                                    echo "Pesanan jumbo - membutuhkan 2 minggu";
+                                                }
+                                            @endphp
+                                        </small>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
 
                         <div class="mt-4 text-center">
                             @if ($customOrder->status == 'Success')

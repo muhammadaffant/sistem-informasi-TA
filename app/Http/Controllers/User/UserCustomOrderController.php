@@ -6,6 +6,7 @@ use App\Models\Size;
 use App\Models\Bahan;
 use App\Models\Ongkir;
 use App\Models\CustomOrder;
+use App\Models\CustomOrderItem;
 use App\Models\JenisSablon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -31,117 +32,157 @@ public function store(Request $request)
     $validator = Validator::make($request->all(), [
         'name' => 'required|string|max:255',
         'file_design' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-        'jenis_sablon_id' => 'required|exists:jenis_sablons,id',
-        'items' => 'required|array|min:1',
-        'items.*.qty' => 'nullable|integer|min:0',
+        'variations' => 'required|array|min:1',
+        'variations.*.bahan_id' => 'required|exists:bahans,id',
+        'variations.*.size_id' => 'required|exists:sizes,id',
+        'variations.*.jenis_sablon_id' => 'required|exists:jenis_sablons,id',
+        'variations.*.quantity' => 'required|integer|min:1',
         'address' => 'required',
         'province_id' => 'required|integer',
         'city_id' => 'required|integer',
         'district_id' => 'required|integer',
         'village_id' => 'nullable|integer',
+        'position' => 'required|string',
     ]);
 
     if ($validator->fails()) {
         return response()->json(['error' => $validator->errors()->first()], 422);
     }
 
-    $jenissablon = JenisSablon::find($request->jenis_sablon_id);
-    $hargaSablon = $jenissablon ? $jenissablon->harga : 0;
-
-    $namaSablonLengkap = $jenissablon->sablonCategory->name . ' - ' . $jenissablon->nama_sablon;
-    
-    // Tahap 1: Hitung total kuantitas
+    // Validasi total kuantitas minimum
     $totalQty = 0;
-    $validItems = [];
-    foreach ($request->items as $sizeId => $item) {
-        $qty = (int)($item['qty'] ?? 0);
-        if ($qty > 0) {
-            $size = Size::find($sizeId);
-            if ($size) {
-                $totalQty += $qty;
-                $validItems[] = ['size' => $size, 'quantity' => $qty];
-            }
-        }
+    foreach ($request->variations as $variation) {
+        $totalQty += $variation['quantity'];
     }
 
-    // Tahap 2: Validasi minimum pemesanan
-    if ($totalQty > 0 && $totalQty < 12) {
-        return response()->json(['error' => 'Minimum pemesanan adalah 12 pcs. Total pesanan Anda saat ini ' . $totalQty . ' pcs.'], 422);
+    if ($totalQty < 12) {
+        return response()->json(['error' => 'Minimum total kuantitas pemesanan adalah 12 pcs.'], 422);
     }
-    if ($totalQty === 0) {
-        return response()->json(['error' => 'Anda harus memasukkan jumlah (quantity) minimal pada satu ukuran.'], 422);
-    }
-    
-    // Tahap 3: BLOK DISKON DIHAPUS
 
-    // Tahap 4: Hitung ulang harga total TANPA DISKON
+    // Process variations dan hitung total
+    $variationItems = [];
     $totalPrice = 0;
-    $orderedItemsDetails = [];
+    $bahans = [];
+    $sablons = [];
 
-    foreach ($validItems as $item) {
-        $size = $item['size'];
-        $qty = $item['quantity'];
-
-        // Harga asli bahan (tanpa diskon)
-        $originalBahanPrice = $size->price;
-
-        // Harga per item (bahan + sablon)
-        $pricePerItem = $originalBahanPrice + $hargaSablon;
-        $subtotal = $pricePerItem * $qty;
+    foreach ($request->variations as $variation) {
+        $size = Size::findOrFail($variation['size_id']);
+        $jenisSablon = JenisSablon::findOrFail($variation['jenis_sablon_id']);
+        $quantity = $variation['quantity'];
         
-        $totalPrice += $subtotal;
-
-        $orderedItemsDetails[] = [
-            'size' => $size->nama_size,
-            'quantity' => $qty,
-            'price' => $originalBahanPrice, // Harga asli bahan
-            // 'discount_percent' Dihapus
-            'sablon_price' => $hargaSablon,
+        $bahanPrice = $size->price;
+        $sablonPrice = $jenisSablon->harga;
+        $subtotal = ($bahanPrice + $sablonPrice) * $quantity;
+        
+        $variationItems[] = [
+            'bahan_id' => $variation['bahan_id'],
+            'size_id' => $variation['size_id'],
+            'jenis_sablon_id' => $variation['jenis_sablon_id'],
+            'quantity' => $quantity,
+            'bahan_price' => $bahanPrice,
+            'sablon_price' => $sablonPrice,
             'subtotal' => $subtotal,
         ];
-    }
-    
-    // Tahap 5: Simpan ke database
-    $data = $request->except(['file_design', 'items', '_token', 'fabric_type', 'bahan_id', 'jenis_sablon_id']);
 
+        $totalPrice += $subtotal;
+        
+        // Collect bahan dan sablon names untuk summary
+        $bahans[] = $size->bahan->nama_bahan;
+        $sablons[] = $jenisSablon->sablonCategory->name . ' - ' . $jenisSablon->nama_sablon;
+    }
+
+    // Upload design files
+    $designFileName = 'design.jpg';
+    $frontDesignFileName = null;
+    $backDesignFileName = null;
+    
+    // Upload main design file (untuk backward compatibility)
     if ($request->hasFile('file_design')) {
-        $data['file_design'] = upload('customorder', $request->file('file_design'), 'file_design');
-    } else {
-        $data['file_design'] = 'design.jpg';
+        $designFileName = upload('customorder', $request->file('file_design'), 'file_design');
+    }
+    
+    // Upload front design file
+    if ($request->hasFile('front_design_file')) {
+        $frontDesignFileName = upload('customorder', $request->file('front_design_file'), 'front_design_file');
+    }
+    
+    // Upload back design file
+    if ($request->hasFile('back_design_file')) {
+        $backDesignFileName = upload('customorder', $request->file('back_design_file'), 'back_design_file');
     }
 
-    $bahan = $validItems[0]['size']->bahan;
-    
-    $data['fabric_type'] = $bahan->nama_bahan;
-    $data['jenis_sablon'] = $namaSablonLengkap;
-    $data['user_id'] = auth()->id();
-    $data['sablon_price'] = $hargaSablon;
-    $data['price'] = 0;
-    $data['total_price'] = $totalPrice;
-    $data['qty'] = $totalQty;
-    $data['size'] = json_encode($orderedItemsDetails);
+    // Create summary untuk backward compatibility
+    $orderedItemsDetails = [];
+    foreach ($variationItems as $item) {
+        $size = Size::find($item['size_id']);
+        $orderedItemsDetails[] = [
+            'size' => $size->nama_size,
+            'quantity' => $item['quantity'],
+            'price' => $item['bahan_price'],
+            'sablon_price' => $item['sablon_price'],
+            'subtotal' => $item['subtotal'],
+        ];
+    }
 
-    $data['dp_paid'] = 0;
-    $data['remaining_payment'] = $totalPrice + (int)($request->ongkir ?? 0);
-    $data['status'] = 'Pending';
-    $data['order_date'] = now();
-    $data['completion_date'] = now()->addWeeks(1);
-    
+    // Handle province/regency mapping
     $apiProvinceId = $request->province_id;
     $apiRegencyId = $request->city_id;
 
     $localProvince = Province::where('rajaongkir_id', $apiProvinceId)->first();
     $localRegency = Regency::where('rajaongkir_id', $apiRegencyId)->first();
 
-    $data['province_id'] = $localProvince ? $localProvince->id : null;
-    $data['regency_id'] = $localRegency ? $localRegency->id : null;
-    
-    $data['district_id'] = $request->district_id;
-    $data['village_id'] = $request->village_id ?? 0;
-    $data['ongkir'] = (int)($request->ongkir ?? 0);
-    $data['courir'] = $request->courier_service;
-    
-    CustomOrder::create($data);
+    // Hitung estimasi hari pengerjaan
+    $estimatedDays = CustomOrder::calculateEstimatedDays($totalQty);
+
+    // Hitung total berat pesanan
+    $totalWeight = 0;
+    foreach ($variationItems as $item) {
+        $size = Size::find($item['size_id']);
+        if ($size && $size->bahan && isset($size->bahan->weight)) {
+            $totalWeight += $size->bahan->weight * $item['quantity'];
+        }
+    }
+    // Minimal weight 100 gram
+    $totalWeight = max($totalWeight, 100);
+
+    // Create custom order
+    $customOrder = CustomOrder::create([
+        'user_id' => auth()->id(),
+        'name' => $request->name,
+        'file_design' => $designFileName,
+        'file_design_front' => $frontDesignFileName,
+        'file_design_back' => $backDesignFileName,
+        'design_description' => $request->design_description,
+        'position' => $request->position,
+        'front_position' => $request->front_position,
+        'back_position' => $request->back_position,
+        'fabric_type' => implode(', ', array_unique($bahans)), // Summary of materials
+        'jenis_sablon' => implode(', ', array_unique($sablons)), // Summary of sablon types
+        'sablon_price' => collect($variationItems)->sum('sablon_price'), // Total sablon price
+        'size' => json_encode($orderedItemsDetails), // Keep for backward compatibility
+        'total_price' => $totalPrice,
+        'qty' => $totalQty,
+        'estimated_days' => $estimatedDays, // Estimasi hari pengerjaan
+        'total_weight' => $totalWeight, // Total berat pesanan
+        'dp_paid' => 0,
+        'remaining_payment' => $totalPrice + ($request->ongkir ?? 0),
+        'status' => 'Pending',
+        'order_date' => now(),
+        'completion_date' => now()->addDays($estimatedDays), // Gunakan estimasi hari untuk completion_date
+        'address' => $request->address,
+        'province_id' => $localProvince ? $localProvince->id : null,
+        'regency_id' => $localRegency ? $localRegency->id : null,
+        'district_id' => $request->district_id ?? null,
+        'village_id' => $request->village_id ?? null,
+        'ongkir' => $request->ongkir ?? 0,
+        // 'courier' => $request->courier ?? null,
+        'courir' => $request->courier_service ?? null,
+    ]);
+
+    // Create custom order items
+    foreach ($variationItems as $item) {
+        $customOrder->customOrderItems()->create($item);
+    }
 
     return response()->json(['success' => 'Pesanan Custom Anda berhasil disubmit.']);
 }
@@ -230,5 +271,72 @@ public function store(Request $request)
         ];
 
         return redirect()->route('user.customorder.history')->with($notification);
+    }
+
+    /**
+     * Calculate total weight for custom order based on materials and quantities
+     */
+    public function calculateWeight(Request $request)
+    {
+        $request->validate([
+            'variations' => 'required|array',
+            'variations.*.bahan_id' => 'required|integer|exists:bahans,id',
+            'variations.*.quantity' => 'required|integer|min:1',
+        ]);
+
+        $totalWeight = 0;
+        
+        foreach ($request->variations as $variation) {
+            $bahan = Bahan::find($variation['bahan_id']);
+            if ($bahan && isset($bahan->weight)) {
+                $totalWeight += $bahan->weight * $variation['quantity'];
+            }
+        }
+
+        // Minimal weight 100 gram untuk shipping calculation
+        $totalWeight = max($totalWeight, 100);
+
+        return response()->json([
+            'success' => true,
+            'total_weight' => $totalWeight
+        ]);
+    }
+
+    /**
+     * Calculate estimated days for custom order
+     */
+    public function calculateEstimation(Request $request)
+    {
+        $totalQuantity = $request->input('total_quantity', 0);
+        $estimatedDays = CustomOrder::calculateEstimatedDays($totalQuantity);
+        
+        $orderDate = now();
+        $completionDate = $orderDate->copy()->addDays($estimatedDays);
+        
+        return response()->json([
+            'success' => true,
+            'estimated_days' => $estimatedDays,
+            'order_date' => $orderDate->format('d M Y'),
+            'completion_date' => $completionDate->format('d M Y'),
+            'working_days_info' => $this->getWorkingDaysInfo($estimatedDays)
+        ]);
+    }
+
+    /**
+     * Get working days information
+     */
+    private function getWorkingDaysInfo($estimatedDays)
+    {
+        if ($estimatedDays <= 3) {
+            return "Pesanan cepat - siap dalam 3 hari kerja";
+        } elseif ($estimatedDays <= 5) {
+            return "Pesanan standar - siap dalam 5 hari kerja";
+        } elseif ($estimatedDays <= 7) {
+            return "Pesanan sedang - membutuhkan 1 minggu";
+        } elseif ($estimatedDays <= 10) {
+            return "Pesanan besar - membutuhkan 10 hari kerja";
+        } else {
+            return "Pesanan jumbo - membutuhkan 2 minggu";
+        }
     }
 }

@@ -13,6 +13,15 @@
             </div>
         </div>
     </div>
+    <div class="row">
+        <div class="col-md-12 col-12">
+            <div class="form-group">
+                <label for="weight">Berat Bahan (gram per unit)</label>
+                <input type="number" class="form-control" name="weight" id="weight" min="1" value="150" autocomplete="off">
+                <small class="form-text text-muted">Berat bahan dalam gram per unit untuk perhitungan ongkir</small>
+            </div>
+        </div>
+    </div>
     {{-- <div class="row">
         <div class="col-md-12 col-12">
             <div class="form-group">

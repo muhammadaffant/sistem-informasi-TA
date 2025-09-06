@@ -33,6 +33,8 @@
                                     <th>Ongkir</th>
                                     <th>Warna</th>
                                     <th>Size</th>
+                                    <th>Berat</th>
+                                    <th>Estimasi</th>
                                     <th>Status Transaksi</th>
                                     <th>Status Pesanan</th>
                                     <th>Action</th>
@@ -64,6 +66,27 @@
         {{ $item->size }}
     @endif
 </td>
+                                        <td>
+                                            @if($item->total_weight)
+                                                <span class="badge badge-secondary">{{ $item->formatted_weight }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($item->estimated_days)
+                                                <div class="text-center">
+                                                    <span class="badge badge-info">{{ $item->estimated_days }} hari</span>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        Perkiraan selesai:<br>
+                                                        {{ \Carbon\Carbon::parse($item->completion_date)->format('d M Y') }}
+                                                    </small>
+                                                </div>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
                                         <td>
                                             <span class="badge" style="background-color: rgb(65, 66, 65); color: white;">{{ $item->status }}</span>
                                         </td>

@@ -32,8 +32,15 @@ class CustomOrderRepositoryImplement extends Eloquent implements CustomOrderRepo
 
     public function show($id)
     {
-        $query =  $this->model->find($id);
-        $query['price'] = format_uang($query['price']);
+        $query = $this->model->with([
+            'customOrderItems.bahan',
+            'customOrderItems.size.bahan',
+            'customOrderItems.jenisSablon.sablonCategory'
+        ])->find($id);
+        
+        if ($query) {
+            $query['price'] = format_uang($query['price']);
+        }
 
         return $query;
     }

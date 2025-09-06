@@ -41,6 +41,7 @@ class BahanServiceImplement extends ServiceApi implements BahanService
     {
         $validator = Validator::make($data, [
             'nama_bahan' => 'required',
+            'weight' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -69,6 +70,7 @@ class BahanServiceImplement extends ServiceApi implements BahanService
     {
         $validator = Validator::make($data, [
             'nama_bahan' => 'required',
+            'weight' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails()) {
